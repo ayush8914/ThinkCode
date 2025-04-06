@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  role          Role           @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  
+  submissions   Submission[]
+  
+  @@map("users")
+}
+
+model Problem {
+  id               String         @id @default(cuid())
+  title            String
+  slug             String         @unique
+  description      String         @db.Text
+  difficulty       Difficulty     @default(EASY)
+  timeLimitMs      Int            @default(2000)
+  memoryLimitKb    Int            @default(262144)
+  isPublic         Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  
+  tags             ProblemTag[]
+  testCases        TestCase[]
+  submissions      Submission[]
+  
+  @@map("problems")
+}
+
+model TestCase {
+  id          String   @id @default(cuid())
+  problemId   String
+  problem     Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  
+  input       String   @db.Text
+  output      String   @db.Text
+  isSample    Boolean  @default(false)
+  explanation String?  @db.Text
+  orderIndex  Int      @default(0)
+  
+  @@map("test_cases")
+}
+
+model Tag {
+  id       String        @id @default(cuid())
+  name     String        @unique
+  problems ProblemTag[]
+  
+  @@map("tags")
+}
+
+model ProblemTag {
+  problemId String
+  tagId     String
+  problem   Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, tagId])
+  @@map("problem_tags")
+}
+
+model Submission {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problemId   String
+  problem     Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  
+  code        String    @db.Text
+  language    Language
+  status      Status    @default(PENDING)
+  
+  executionTimeMs Int?
+  memoryUsedKb    Int?
+  errorMessage    String?  @db.Text
+  failedTestCaseIndex Int?
+  
+  createdAt   DateTime  @default(now())
+  judgedAt    DateTime?
+  
+  @@index([userId, problemId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("submissions")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Language {
+  PYTHON
+  CPP
+  C
+  JS
+}
+
+enum Status {
+  PENDING
+  PROCESSING
+  ACCEPTED
+  WRONG_ANSWER
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+  COMPILATION_ERROR
+  INTERNAL_ERROR
+}
