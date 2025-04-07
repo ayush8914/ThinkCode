@@ -5,7 +5,7 @@ export const SubmitCodeSchema = z.object({
   userId: z.string().min(1, 'User ID is required'),
   problemId: z.string().min(1, 'Problem ID is required'),
   code: z.string().min(1, 'Code is required'),
-  language: z.enum(['PYTHON', 'CPP', 'JAVA']),
+  language: z.enum(['PYTHON', 'CPP', 'C', 'JS']),
 });
 
 export type SubmitCodeRequest = z.infer<typeof SubmitCodeSchema>;
