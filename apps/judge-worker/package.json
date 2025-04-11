@@ -10,7 +10,7 @@
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
-    "@repo/db": "*",
+    "@repo/db": "^1.0.0",
     "dotenv": "^16.4.5",
     "ioredis": "^5.4.1"
   },
