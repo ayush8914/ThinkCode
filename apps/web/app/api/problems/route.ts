@@ -1,78 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 export async function GET(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
     const searchParams = request.nextUrl.searchParams;
-    const difficulty = searchParams.get('difficulty');
-    const search = searchParams.get('search');
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const offset = parseInt(searchParams.get('offset') || '0');
     
-    const where: any = {
-      isPublic: true,
-    };
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '15');
+    const difficulty = searchParams.get('difficulty') || undefined;
+    const tag = searchParams.get('tag') || undefined;
     
-    if (difficulty) {
-      where.difficulty = difficulty;
+    const where: any = { isPublic: true };
+    if (difficulty) where.difficulty = difficulty;
+    if (tag) {
+      where.tags = { some: { tag: { name: tag } } };
     }
     
-    if (search) {
-      where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
-    }
+    const [problems, total] = await Promise.all([
+      prisma.problem.findMany({
+        where,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          difficulty: true,
+          tags: {
+            select: {
+              tag: { select: { id: true, name: true } }
+            }
+          },
+          _count: { select: { submissions: true } },
+          ...(session?.user?.id && {
+            submissions: {
+              where: { userId: session.user.id },
+              select: { status: true },
+              take: 1,
+              orderBy: { createdAt: 'desc' }
+            }
+          })
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.problem.count({ where })
+    ]);
     
-    const problems = await prisma.problem.findMany({
-      where,
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        difficulty: true,
-        createdAt: true,
-        tags: {
-          select: {
-            tag: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            submissions: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
+    const problemsWithStatus = problems.map(problem => {
+      const { submissions, ...rest } = problem;
+      let userStatus = 'NONE';
+      
+      if (submissions?.length) {
+        const hasSolved = submissions.some(s => s.status === 'ACCEPTED');
+        userStatus = hasSolved ? 'SOLVED' : 'ATTEMPTED';
+      }
+      
+      return { ...rest, userStatus };
     });
-    
-    const total = await prisma.problem.count({ where });
     
     return NextResponse.json({
       success: true,
-      data: {
-        problems: problems.map(p => ({
-          ...p,
-          tags: p.tags.map(t => t.tag),
-        })),
-        total,
-        limit,
-        offset,
-      },
+      problems: problemsWithStatus,
+      total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
     });
     
   } catch (error) {
-    console.error('Fetch problems error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-    }, { status: 500 });
+    console.error('Failed to fetch problems:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch problems' },
+      { status: 500 }
+    );
   }
 }
