@@ -27,6 +27,7 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [fontSize, setFontSize] = useState(14);
+  const [isPolling, setIsPolling] = useState(false);
 
   const handleSubmit = async () => {
     const userId = session?.user?.id;
@@ -37,6 +38,7 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
     }
 
     setSubmitting(true);
+    setIsPolling(true);
     setResult(null);
 
     try {
@@ -58,20 +60,22 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
           status: 'PENDING',
           submissionId: data.data.submissionId,
         });
-        pollSubmissionStatus(data.data.submissionId);
+        await pollSubmissionStatus(data.data.submissionId);
       } else {
         setResult({
           status: 'ERROR',
           message: data.error || 'Submission failed',
         });
+        setSubmitting(false);
+        setIsPolling(false);
       }
     } catch (error) {
       setResult({
         status: 'ERROR',
         message: 'Failed to connect to server',
       });
-    } finally {
       setSubmitting(false);
+      setIsPolling(false);
     }
   };
 
@@ -93,6 +97,8 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
           });
 
           if (data.data.status !== 'PENDING' && data.data.status !== 'PROCESSING') {
+            setSubmitting(false);
+            setIsPolling(false);
             break;
           }
         }
@@ -138,6 +144,14 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
 
   // If not logged in, show disabled editor with lock overlay
   const isLoggedIn = !!session;
+  const isDisabled = submitting || isPolling;
+
+  // Auto-scroll to result when it appears
+  const resultRef = (el: HTMLDivElement | null) => {
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -147,9 +161,9 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            disabled={!isLoggedIn}
+            disabled={!isLoggedIn || isDisabled}
             className={`px-3 py-1.5 rounded-md text-sm bg-white/5 border border-white/10 font-mono transition-colors ${
-              isLoggedIn 
+              isLoggedIn && !isDisabled
                 ? 'text-white/80 cursor-pointer hover:bg-white/10' 
                 : 'text-white/30 cursor-not-allowed'
             }`}
@@ -164,9 +178,9 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setFontSize(f => Math.max(10, f - 2))}
-              disabled={!isLoggedIn}
+              disabled={!isLoggedIn || isDisabled}
               className={`px-2 py-1 transition-colors ${
-                isLoggedIn ? 'text-white/40 hover:text-white/70' : 'text-white/20 cursor-not-allowed'
+                isLoggedIn && !isDisabled ? 'text-white/40 hover:text-white/70' : 'text-white/20 cursor-not-allowed'
               }`}
             >
               A-
@@ -174,9 +188,9 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
             <span className={`text-sm ${isLoggedIn ? 'text-white/40' : 'text-white/20'}`}>{fontSize}px</span>
             <button
               onClick={() => setFontSize(f => Math.min(20, f + 2))}
-              disabled={!isLoggedIn}
+              disabled={!isLoggedIn || isDisabled}
               className={`px-2 py-1 transition-colors ${
-                isLoggedIn ? 'text-white/40 hover:text-white/70' : 'text-white/20 cursor-not-allowed'
+                isLoggedIn && !isDisabled ? 'text-white/40 hover:text-white/70' : 'text-white/20 cursor-not-allowed'
               }`}
             >
               A+
@@ -186,21 +200,21 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
 
         <button
           onClick={handleSubmit}
-          disabled={submitting || !isLoggedIn}
+          disabled={isDisabled || !isLoggedIn}
           className="flex items-center gap-2 px-6 py-1.5 rounded-md text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            background: isLoggedIn 
+            background: isLoggedIn && !isDisabled
               ? 'linear-gradient(135deg, #5b21b6, #1d4ed8)' 
               : 'rgba(255,255,255,0.05)',
-            border: isLoggedIn ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.1)',
-            color: isLoggedIn ? 'white' : 'rgba(255,255,255,0.4)',
-            boxShadow: isLoggedIn ? '0 0 20px rgba(124,58,237,0.25)' : 'none',
+            border: isLoggedIn && !isDisabled ? '1px solid rgba(124,58,237,0.4)' : '1px solid rgba(255,255,255,0.1)',
+            color: isLoggedIn && !isDisabled ? 'white' : 'rgba(255,255,255,0.4)',
+            boxShadow: isLoggedIn && !isDisabled ? '0 0 20px rgba(124,58,237,0.25)' : 'none',
           }}
         >
-          {submitting ? (
+          {isDisabled ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Running...
+              {isPolling ? 'Judging...' : 'Running...'}
             </>
           ) : (
             <>
@@ -242,7 +256,7 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
             },
             overviewRulerBorder: false,
             hideCursorInOverviewRuler: true,
-            readOnly: !isLoggedIn,
+            readOnly: !isLoggedIn || isDisabled,
           }}
           beforeMount={(monaco) => {
             monaco.editor.defineTheme('vs-dark', {
@@ -277,13 +291,13 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
         )}
       </div>
 
-      {/* Result Panel */}
+      {/* Result Panel - Fixed display and auto-scroll */}
       {result && isLoggedIn && (
-        <div className={`border-t ${getStatusColor(result.status)} p-4`}>
+        <div ref={resultRef} className={`border-t ${getStatusColor(result.status)} p-4`}>
           <div className="flex items-center gap-3">
             {getStatusIcon(result.status)}
             <span className="font-semibold text-white">{result.status}</span>
-            {result.executionTimeMs && (
+            {result.executionTimeMs !== undefined && result.executionTimeMs !== null && (
               <>
                 <span className="text-white/20">•</span>
                 <span className="text-white/50 text-sm">
@@ -291,7 +305,7 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
                 </span>
               </>
             )}
-            {result.memoryUsedKb && (
+            {result.memoryUsedKb !== undefined && result.memoryUsedKb !== null && result.memoryUsedKb > 0 && (
               <>
                 <span className="text-white/20">•</span>
                 <span className="text-white/50 text-sm">
@@ -303,7 +317,7 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
           {result.errorMessage && (
             <p className="mt-2 text-sm text-rose-400/80 font-mono">{result.errorMessage}</p>
           )}
-          {result.failedTestCaseIndex !== undefined && result.failedTestCaseIndex >= 0 && (
+          {result.failedTestCaseIndex !== undefined && result.failedTestCaseIndex !== null && result.failedTestCaseIndex >= 0 && (
             <p className="mt-2 text-sm text-white/50">
               Failed at test case #{result.failedTestCaseIndex + 1}
             </p>
