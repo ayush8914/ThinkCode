@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Monaco from '@monaco-editor/react';
-import { Play, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Lock } from 'lucide-react';
+import { Play, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Lock, ChevronUp, ChevronDown } from 'lucide-react';
 
-// Updated: Only C++, C, Python, JavaScript with C++ as default
 const LANGUAGES = [
   { value: 'cpp', label: 'C++', monaco: 'cpp' },
   { value: 'c', label: 'C', monaco: 'c' },
@@ -23,11 +22,26 @@ const LANGUAGE_MAP: Record<string, string> = {
 export default function CodeEditor({ problemId }: { problemId: string }) {
   const { data: session } = useSession();
   const [code, setCode] = useState('');
-  const [language, setLanguage] = useState('cpp'); // Default: C++
+  const [language, setLanguage] = useState('cpp');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [fontSize, setFontSize] = useState(14);
   const [isPolling, setIsPolling] = useState(false);
+  const [editorHeight, setEditorHeight] = useState('100%');
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const isLoggedIn = !!session;
+  const isDisabled = submitting || isPolling;
+  const showResultPanel = result && isLoggedIn;
+
+  // Adjust editor height when result panel is shown
+  useEffect(() => {
+    if (showResultPanel) {
+      setEditorHeight('50%');
+    } else {
+      setEditorHeight('100%');
+    }
+  }, [showResultPanel]);
 
   const handleSubmit = async () => {
     const userId = session?.user?.id;
@@ -40,6 +54,7 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
     setSubmitting(true);
     setIsPolling(true);
     setResult(null);
+    setEditorHeight('50%');
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_JUDGE_API_URL}/api/submit`, {
@@ -108,6 +123,11 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
     }
   };
 
+  const handleCloseResult = () => {
+    setResult(null);
+    setEditorHeight('100%');
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'ACCEPTED':
@@ -142,19 +162,8 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
     }
   };
 
-  // If not logged in, show disabled editor with lock overlay
-  const isLoggedIn = !!session;
-  const isDisabled = submitting || isPolling;
-
-  // Auto-scroll to result when it appears
-  const resultRef = (el: HTMLDivElement | null) => {
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  };
-
   return (
-    <div className="h-full flex flex-col">
+    <div ref={containerRef} className="h-full flex flex-col">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/[0.01]">
         <div className="flex items-center gap-3">
@@ -226,7 +235,7 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
       </div>
 
       {/* Monaco Editor */}
-      <div className="flex-1 overflow-hidden relative">
+      <div style={{ height: editorHeight }} className="overflow-hidden relative transition-all duration-300">
         <Monaco
           height="100%"
           language={LANGUAGES.find(l => l.value === language)?.monaco || 'cpp'}
@@ -274,7 +283,6 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
           }}
         />
         
-        {/* Lock overlay when not logged in */}
         {!isLoggedIn && (
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center">
             <div className="text-center">
@@ -291,41 +299,57 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
         )}
       </div>
 
-      {/* Result Panel - Fixed display and auto-scroll */}
-      {result && isLoggedIn && (
-        <div ref={resultRef} className={`border-t ${getStatusColor(result.status)} p-4`}>
-          <div className="flex items-center gap-3">
-            {getStatusIcon(result.status)}
-            <span className="font-semibold text-white">{result.status}</span>
-            {result.executionTimeMs !== undefined && result.executionTimeMs !== null && (
-              <>
-                <span className="text-white/20">•</span>
-                <span className="text-white/50 text-sm">
-                  {result.executionTimeMs}ms
-                </span>
-              </>
-            )}
-            {result.memoryUsedKb !== undefined && result.memoryUsedKb !== null && result.memoryUsedKb > 0 && (
-              <>
-                <span className="text-white/20">•</span>
-                <span className="text-white/50 text-sm">
-                  {Math.round(result.memoryUsedKb / 1024)}MB
-                </span>
-              </>
-            )}
+      {/* Result Panel */}
+      {showResultPanel && (
+        <div className={`border-t ${getStatusColor(result.status)}`} style={{ height: '50%', overflow: 'auto' }}>
+          <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              {getStatusIcon(result.status)}
+              <span className="font-semibold text-white">{result.status}</span>
+              {result.executionTimeMs !== undefined && result.executionTimeMs !== null && (
+                <>
+                  <span className="text-white/20">•</span>
+                  <span className="text-white/50 text-sm">{result.executionTimeMs}ms</span>
+                </>
+              )}
+              {result.memoryUsedKb !== undefined && result.memoryUsedKb !== null && result.memoryUsedKb > 0 && (
+                <>
+                  <span className="text-white/20">•</span>
+                  <span className="text-white/50 text-sm">{Math.round(result.memoryUsedKb / 1024)}MB</span>
+                </>
+              )}
+            </div>
+            <button
+              onClick={handleCloseResult}
+              className="p-1 hover:bg-white/10 rounded transition-colors"
+            >
+              <ChevronDown className="h-4 w-4 text-white/60" />
+            </button>
           </div>
-          {result.errorMessage && (
-            <p className="mt-2 text-sm text-rose-400/80 font-mono">{result.errorMessage}</p>
-          )}
-          {result.failedTestCaseIndex !== undefined && result.failedTestCaseIndex !== null && result.failedTestCaseIndex >= 0 && (
-            <p className="mt-2 text-sm text-white/50">
-              Failed at test case #{result.failedTestCaseIndex + 1}
-            </p>
-          )}
+          <div className="p-4">
+            {result.errorMessage && (
+              <p className="text-sm text-rose-400/80 font-mono whitespace-pre-wrap">{result.errorMessage}</p>
+            )}
+            {result.failedTestCaseIndex !== undefined && result.failedTestCaseIndex !== null && result.failedTestCaseIndex >= 0 && (
+              <p className="text-sm text-white/50">
+                Failed at test case #{result.failedTestCaseIndex + 1}
+              </p>
+            )}
+            {result.status === 'PENDING' || result.status === 'PROCESSING' ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 text-violet-400 animate-spin" />
+                <span className="ml-3 text-white/60">Running your code...</span>
+              </div>
+            ) : result.status === 'ACCEPTED' ? (
+              <div className="py-4 text-center">
+                <CheckCircle2 className="h-12 w-12 text-emerald-400 mx-auto mb-2" />
+                <p className="text-emerald-400 font-medium">All test cases passed!</p>
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
 
-      {/* Sign in prompt banner */}
       {!isLoggedIn && (
         <div className="border-t border-amber-500/30 bg-amber-500/5 p-4">
           <p className="text-sm text-amber-400/80">
