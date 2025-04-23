@@ -11,7 +11,8 @@
 
 export const Role = {
   USER: 'USER',
-  ADMIN: 'ADMIN'
+  ADMIN: 'ADMIN',
+  PROBLEM_SETTER: 'PROBLEM_SETTER'
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
@@ -49,3 +50,20 @@ export const Status = {
 } as const
 
 export type Status = (typeof Status)[keyof typeof Status]
+
+
+export const ContestName = {
+  STARTERS: 'STARTERS',
+  WEEKLY: 'WEEKLY',
+  LONG_WEEK: 'LONG_WEEK'
+} as const
+
+export type ContestName = (typeof ContestName)[keyof typeof ContestName]
+
+
+export const ContestType = {
+  RATED: 'RATED',
+  UNRATED: 'UNRATED'
+} as const
+
+export type ContestType = (typeof ContestType)[keyof typeof ContestType]

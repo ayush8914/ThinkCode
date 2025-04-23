@@ -20,8 +20,22 @@ export type UserModel = runtime.Types.Result.DefaultSelection<Prisma.$UserPayloa
 
 export type AggregateUser = {
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
+}
+
+export type UserAvgAggregateOutputType = {
+  contestRating: number | null
+  maxContestRating: number | null
+  globalRanking: number | null
+}
+
+export type UserSumAggregateOutputType = {
+  contestRating: number | null
+  maxContestRating: number | null
+  globalRanking: number | null
 }
 
 export type UserMinAggregateOutputType = {
@@ -32,6 +46,9 @@ export type UserMinAggregateOutputType = {
   role: $Enums.Role | null
   image: string | null
   provider: string | null
+  contestRating: number | null
+  maxContestRating: number | null
+  globalRanking: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -44,6 +61,9 @@ export type UserMaxAggregateOutputType = {
   role: $Enums.Role | null
   image: string | null
   provider: string | null
+  contestRating: number | null
+  maxContestRating: number | null
+  globalRanking: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -56,11 +76,26 @@ export type UserCountAggregateOutputType = {
   role: number
   image: number
   provider: number
+  contestRating: number
+  maxContestRating: number
+  globalRanking: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
+
+export type UserAvgAggregateInputType = {
+  contestRating?: true
+  maxContestRating?: true
+  globalRanking?: true
+}
+
+export type UserSumAggregateInputType = {
+  contestRating?: true
+  maxContestRating?: true
+  globalRanking?: true
+}
 
 export type UserMinAggregateInputType = {
   id?: true
@@ -70,6 +105,9 @@ export type UserMinAggregateInputType = {
   role?: true
   image?: true
   provider?: true
+  contestRating?: true
+  maxContestRating?: true
+  globalRanking?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +120,9 @@ export type UserMaxAggregateInputType = {
   role?: true
   image?: true
   provider?: true
+  contestRating?: true
+  maxContestRating?: true
+  globalRanking?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -94,6 +135,9 @@ export type UserCountAggregateInputType = {
   role?: true
   image?: true
   provider?: true
+  contestRating?: true
+  maxContestRating?: true
+  globalRanking?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -137,6 +181,18 @@ export type UserAggregateArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: UserAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: UserSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: UserMinAggregateInputType
@@ -167,6 +223,8 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
   take?: number
   skip?: number
   _count?: UserCountAggregateInputType | true
+  _avg?: UserAvgAggregateInputType
+  _sum?: UserSumAggregateInputType
   _min?: UserMinAggregateInputType
   _max?: UserMaxAggregateInputType
 }
@@ -179,9 +237,14 @@ export type UserGroupByOutputType = {
   role: $Enums.Role
   image: string | null
   provider: string | null
+  contestRating: number
+  maxContestRating: number
+  globalRanking: number | null
   createdAt: Date
   updatedAt: Date
   _count: UserCountAggregateOutputType | null
+  _avg: UserAvgAggregateOutputType | null
+  _sum: UserSumAggregateOutputType | null
   _min: UserMinAggregateOutputType | null
   _max: UserMaxAggregateOutputType | null
 }
@@ -212,9 +275,13 @@ export type UserWhereInput = {
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
   image?: Prisma.StringNullableFilter<"User"> | string | null
   provider?: Prisma.StringNullableFilter<"User"> | string | null
+  contestRating?: Prisma.IntFilter<"User"> | number
+  maxContestRating?: Prisma.IntFilter<"User"> | number
+  globalRanking?: Prisma.IntNullableFilter<"User"> | number | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   submissions?: Prisma.SubmissionListRelationFilter
+  activities?: Prisma.UserActivityListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -225,9 +292,13 @@ export type UserOrderByWithRelationInput = {
   role?: Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrderInput | Prisma.SortOrder
+  contestRating?: Prisma.SortOrder
+  maxContestRating?: Prisma.SortOrder
+  globalRanking?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   submissions?: Prisma.SubmissionOrderByRelationAggregateInput
+  activities?: Prisma.UserActivityOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -241,9 +312,13 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   role?: Prisma.EnumRoleFilter<"User"> | $Enums.Role
   image?: Prisma.StringNullableFilter<"User"> | string | null
   provider?: Prisma.StringNullableFilter<"User"> | string | null
+  contestRating?: Prisma.IntFilter<"User"> | number
+  maxContestRating?: Prisma.IntFilter<"User"> | number
+  globalRanking?: Prisma.IntNullableFilter<"User"> | number | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   submissions?: Prisma.SubmissionListRelationFilter
+  activities?: Prisma.UserActivityListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -254,11 +329,16 @@ export type UserOrderByWithAggregationInput = {
   role?: Prisma.SortOrder
   image?: Prisma.SortOrderInput | Prisma.SortOrder
   provider?: Prisma.SortOrderInput | Prisma.SortOrder
+  contestRating?: Prisma.SortOrder
+  maxContestRating?: Prisma.SortOrder
+  globalRanking?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.UserCountOrderByAggregateInput
+  _avg?: Prisma.UserAvgOrderByAggregateInput
   _max?: Prisma.UserMaxOrderByAggregateInput
   _min?: Prisma.UserMinOrderByAggregateInput
+  _sum?: Prisma.UserSumOrderByAggregateInput
 }
 
 export type UserScalarWhereWithAggregatesInput = {
@@ -272,6 +352,9 @@ export type UserScalarWhereWithAggregatesInput = {
   role?: Prisma.EnumRoleWithAggregatesFilter<"User"> | $Enums.Role
   image?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   provider?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  contestRating?: Prisma.IntWithAggregatesFilter<"User"> | number
+  maxContestRating?: Prisma.IntWithAggregatesFilter<"User"> | number
+  globalRanking?: Prisma.IntNullableWithAggregatesFilter<"User"> | number | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
 }
@@ -284,9 +367,13 @@ export type UserCreateInput = {
   role?: $Enums.Role
   image?: string | null
   provider?: string | null
+  contestRating?: number
+  maxContestRating?: number
+  globalRanking?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   submissions?: Prisma.SubmissionCreateNestedManyWithoutUserInput
+  activities?: Prisma.UserActivityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -297,9 +384,13 @@ export type UserUncheckedCreateInput = {
   role?: $Enums.Role
   image?: string | null
   provider?: string | null
+  contestRating?: number
+  maxContestRating?: number
+  globalRanking?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
   submissions?: Prisma.SubmissionUncheckedCreateNestedManyWithoutUserInput
+  activities?: Prisma.UserActivityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -310,9 +401,13 @@ export type UserUpdateInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  maxContestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  globalRanking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissions?: Prisma.SubmissionUpdateManyWithoutUserNestedInput
+  activities?: Prisma.UserActivityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -323,9 +418,13 @@ export type UserUncheckedUpdateInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  maxContestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  globalRanking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   submissions?: Prisma.SubmissionUncheckedUpdateManyWithoutUserNestedInput
+  activities?: Prisma.UserActivityUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -336,6 +435,9 @@ export type UserCreateManyInput = {
   role?: $Enums.Role
   image?: string | null
   provider?: string | null
+  contestRating?: number
+  maxContestRating?: number
+  globalRanking?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -348,6 +450,9 @@ export type UserUpdateManyMutationInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  maxContestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  globalRanking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -360,6 +465,9 @@ export type UserUncheckedUpdateManyInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  maxContestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  globalRanking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -372,8 +480,17 @@ export type UserCountOrderByAggregateInput = {
   role?: Prisma.SortOrder
   image?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  contestRating?: Prisma.SortOrder
+  maxContestRating?: Prisma.SortOrder
+  globalRanking?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type UserAvgOrderByAggregateInput = {
+  contestRating?: Prisma.SortOrder
+  maxContestRating?: Prisma.SortOrder
+  globalRanking?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -384,6 +501,9 @@ export type UserMaxOrderByAggregateInput = {
   role?: Prisma.SortOrder
   image?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  contestRating?: Prisma.SortOrder
+  maxContestRating?: Prisma.SortOrder
+  globalRanking?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -396,8 +516,17 @@ export type UserMinOrderByAggregateInput = {
   role?: Prisma.SortOrder
   image?: Prisma.SortOrder
   provider?: Prisma.SortOrder
+  contestRating?: Prisma.SortOrder
+  maxContestRating?: Prisma.SortOrder
+  globalRanking?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type UserSumOrderByAggregateInput = {
+  contestRating?: Prisma.SortOrder
+  maxContestRating?: Prisma.SortOrder
+  globalRanking?: Prisma.SortOrder
 }
 
 export type UserScalarRelationFilter = {
@@ -415,6 +544,22 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type EnumRoleFieldUpdateOperationsInput = {
   set?: $Enums.Role
+}
+
+export type IntFieldUpdateOperationsInput = {
+  set?: number
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -435,6 +580,20 @@ export type UserUpdateOneRequiredWithoutSubmissionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSubmissionsInput, Prisma.UserUpdateWithoutSubmissionsInput>, Prisma.UserUncheckedUpdateWithoutSubmissionsInput>
 }
 
+export type UserCreateNestedOneWithoutActivitiesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutActivitiesInput, Prisma.UserUncheckedCreateWithoutActivitiesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutActivitiesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutActivitiesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutActivitiesInput, Prisma.UserUncheckedCreateWithoutActivitiesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutActivitiesInput
+  upsert?: Prisma.UserUpsertWithoutActivitiesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutActivitiesInput, Prisma.UserUpdateWithoutActivitiesInput>, Prisma.UserUncheckedUpdateWithoutActivitiesInput>
+}
+
 export type UserCreateWithoutSubmissionsInput = {
   id?: string
   email: string
@@ -443,8 +602,12 @@ export type UserCreateWithoutSubmissionsInput = {
   role?: $Enums.Role
   image?: string | null
   provider?: string | null
+  contestRating?: number
+  maxContestRating?: number
+  globalRanking?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  activities?: Prisma.UserActivityCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSubmissionsInput = {
@@ -455,8 +618,12 @@ export type UserUncheckedCreateWithoutSubmissionsInput = {
   role?: $Enums.Role
   image?: string | null
   provider?: string | null
+  contestRating?: number
+  maxContestRating?: number
+  globalRanking?: number | null
   createdAt?: Date | string
   updatedAt?: Date | string
+  activities?: Prisma.UserActivityUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSubmissionsInput = {
@@ -483,8 +650,12 @@ export type UserUpdateWithoutSubmissionsInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  maxContestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  globalRanking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  activities?: Prisma.UserActivityUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSubmissionsInput = {
@@ -495,8 +666,92 @@ export type UserUncheckedUpdateWithoutSubmissionsInput = {
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  maxContestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  globalRanking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  activities?: Prisma.UserActivityUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutActivitiesInput = {
+  id?: string
+  email: string
+  passwordHash?: string | null
+  name?: string | null
+  role?: $Enums.Role
+  image?: string | null
+  provider?: string | null
+  contestRating?: number
+  maxContestRating?: number
+  globalRanking?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  submissions?: Prisma.SubmissionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutActivitiesInput = {
+  id?: string
+  email: string
+  passwordHash?: string | null
+  name?: string | null
+  role?: $Enums.Role
+  image?: string | null
+  provider?: string | null
+  contestRating?: number
+  maxContestRating?: number
+  globalRanking?: number | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  submissions?: Prisma.SubmissionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutActivitiesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutActivitiesInput, Prisma.UserUncheckedCreateWithoutActivitiesInput>
+}
+
+export type UserUpsertWithoutActivitiesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutActivitiesInput, Prisma.UserUncheckedUpdateWithoutActivitiesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutActivitiesInput, Prisma.UserUncheckedCreateWithoutActivitiesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutActivitiesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutActivitiesInput, Prisma.UserUncheckedUpdateWithoutActivitiesInput>
+}
+
+export type UserUpdateWithoutActivitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  maxContestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  globalRanking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  submissions?: Prisma.SubmissionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutActivitiesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  provider?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  contestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  maxContestRating?: Prisma.IntFieldUpdateOperationsInput | number
+  globalRanking?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  submissions?: Prisma.SubmissionUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -506,10 +761,12 @@ export type UserUncheckedUpdateWithoutSubmissionsInput = {
 
 export type UserCountOutputType = {
   submissions: number
+  activities: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   submissions?: boolean | UserCountOutputTypeCountSubmissionsArgs
+  activities?: boolean | UserCountOutputTypeCountActivitiesArgs
 }
 
 /**
@@ -529,6 +786,13 @@ export type UserCountOutputTypeCountSubmissionsArgs<ExtArgs extends runtime.Type
   where?: Prisma.SubmissionWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountActivitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserActivityWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -538,9 +802,13 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   role?: boolean
   image?: boolean
   provider?: boolean
+  contestRating?: boolean
+  maxContestRating?: boolean
+  globalRanking?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   submissions?: boolean | Prisma.User$submissionsArgs<ExtArgs>
+  activities?: boolean | Prisma.User$activitiesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -552,6 +820,9 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   role?: boolean
   image?: boolean
   provider?: boolean
+  contestRating?: boolean
+  maxContestRating?: boolean
+  globalRanking?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -564,6 +835,9 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   role?: boolean
   image?: boolean
   provider?: boolean
+  contestRating?: boolean
+  maxContestRating?: boolean
+  globalRanking?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["user"]>
@@ -576,13 +850,17 @@ export type UserSelectScalar = {
   role?: boolean
   image?: boolean
   provider?: boolean
+  contestRating?: boolean
+  maxContestRating?: boolean
+  globalRanking?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "name" | "role" | "image" | "provider" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "passwordHash" | "name" | "role" | "image" | "provider" | "contestRating" | "maxContestRating" | "globalRanking" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   submissions?: boolean | Prisma.User$submissionsArgs<ExtArgs>
+  activities?: boolean | Prisma.User$activitiesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -592,6 +870,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "User"
   objects: {
     submissions: Prisma.$SubmissionPayload<ExtArgs>[]
+    activities: Prisma.$UserActivityPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -601,6 +880,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     role: $Enums.Role
     image: string | null
     provider: string | null
+    contestRating: number
+    maxContestRating: number
+    globalRanking: number | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["user"]>
@@ -998,6 +1280,7 @@ readonly fields: UserFieldRefs;
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   submissions<T extends Prisma.User$submissionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$submissionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SubmissionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  activities<T extends Prisma.User$activitiesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$activitiesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserActivityPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1034,6 +1317,9 @@ export interface UserFieldRefs {
   readonly role: Prisma.FieldRef<"User", 'Role'>
   readonly image: Prisma.FieldRef<"User", 'String'>
   readonly provider: Prisma.FieldRef<"User", 'String'>
+  readonly contestRating: Prisma.FieldRef<"User", 'Int'>
+  readonly maxContestRating: Prisma.FieldRef<"User", 'Int'>
+  readonly globalRanking: Prisma.FieldRef<"User", 'Int'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>
 }
@@ -1450,6 +1736,30 @@ export type User$submissionsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.SubmissionScalarFieldEnum | Prisma.SubmissionScalarFieldEnum[]
+}
+
+/**
+ * User.activities
+ */
+export type User$activitiesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserActivity
+   */
+  select?: Prisma.UserActivitySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserActivity
+   */
+  omit?: Prisma.UserActivityOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserActivityInclude<ExtArgs> | null
+  where?: Prisma.UserActivityWhereInput
+  orderBy?: Prisma.UserActivityOrderByWithRelationInput | Prisma.UserActivityOrderByWithRelationInput[]
+  cursor?: Prisma.UserActivityWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserActivityScalarFieldEnum | Prisma.UserActivityScalarFieldEnum[]
 }
 
 /**

@@ -71,3 +71,8 @@ export type ProblemTag = Prisma.ProblemTagModel
  * 
  */
 export type Submission = Prisma.SubmissionModel
+/**
+ * Model UserActivity
+ * 
+ */
+export type UserActivity = Prisma.UserActivityModel

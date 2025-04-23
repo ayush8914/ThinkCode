@@ -10,17 +10,21 @@ datasource db {
 
 
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  passwordHash  String?         
-  name          String?
-  role          Role           @default(USER)
-  image         String?        
-  provider      String?       
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                String         @id @default(cuid())
+  email             String         @unique
+  passwordHash      String?        
+  name              String?
+  role              Role           @default(USER)
+  image             String?        
+  provider          String?
+  contestRating     Int            @default(800)
+  maxContestRating  Int            @default(800)
+  globalRanking     Int?       
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
   
   submissions   Submission[]
+  activities    UserActivity[]
   
   @@map("users")
 }
@@ -33,7 +37,17 @@ model Problem {
   difficulty       Difficulty     @default(EASY)
   timeLimitMs      Int            @default(2000)
   memoryLimitKb    Int            @default(262144)
+
+  //stats
+  totalSubmissions Int            @default(0)
+  acceptedSubmissions Int         @default(0)
+  acceptedRate     Float          @default(0)
+
   isPublic         Boolean        @default(false)
+  isConsumed       Boolean        @default(false)
+  isDailyChallenge Int            @default(0) // 0 means not a daily challenge, 1 means it's a today's challenge, 2 means to keep history that it's a past daily challenge 
+  
+  rating           Int            @default(10)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   
@@ -101,9 +115,28 @@ model Submission {
   @@map("submissions")
 }
 
+
+model UserActivity {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime  @map("activity_date")
+  
+  submissions Int       @default(0)
+  accepted    Int       @default(0)
+  wrongAnswer Int       @default(0)
+  timeLimit   Int       @default(0)
+  runtimeError Int      @default(0)
+  compilationError Int  @default(0)
+  
+  @@unique([userId, date])
+  @@map("user_activities")
+}
+
 enum Role {
   USER
   ADMIN
+  PROBLEM_SETTER
 }
 
 enum Difficulty {
@@ -129,4 +162,15 @@ enum Status {
   RUNTIME_ERROR
   COMPILATION_ERROR
   INTERNAL_ERROR
+}
+
+enum ContestName {
+  STARTERS   //on every Wednesday
+  WEEKLY     //on every Sunday
+  LONG_WEEK    //on every Saturday - Monday
+}
+
+enum ContestType {
+  RATED
+  UNRATED
 }

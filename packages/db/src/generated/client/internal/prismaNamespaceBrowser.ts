@@ -56,7 +56,8 @@ export const ModelName = {
   TestCase: 'TestCase',
   Tag: 'Tag',
   ProblemTag: 'ProblemTag',
-  Submission: 'Submission'
+  Submission: 'Submission',
+  UserActivity: 'UserActivity'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -83,6 +84,9 @@ export const UserScalarFieldEnum = {
   role: 'role',
   image: 'image',
   provider: 'provider',
+  contestRating: 'contestRating',
+  maxContestRating: 'maxContestRating',
+  globalRanking: 'globalRanking',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -98,7 +102,13 @@ export const ProblemScalarFieldEnum = {
   difficulty: 'difficulty',
   timeLimitMs: 'timeLimitMs',
   memoryLimitKb: 'memoryLimitKb',
+  totalSubmissions: 'totalSubmissions',
+  acceptedSubmissions: 'acceptedSubmissions',
+  acceptedRate: 'acceptedRate',
   isPublic: 'isPublic',
+  isConsumed: 'isConsumed',
+  isDailyChallenge: 'isDailyChallenge',
+  rating: 'rating',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -151,6 +161,21 @@ export const SubmissionScalarFieldEnum = {
 } as const
 
 export type SubmissionScalarFieldEnum = (typeof SubmissionScalarFieldEnum)[keyof typeof SubmissionScalarFieldEnum]
+
+
+export const UserActivityScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  date: 'date',
+  submissions: 'submissions',
+  accepted: 'accepted',
+  wrongAnswer: 'wrongAnswer',
+  timeLimit: 'timeLimit',
+  runtimeError: 'runtimeError',
+  compilationError: 'compilationError'
+} as const
+
+export type UserActivityScalarFieldEnum = (typeof UserActivityScalarFieldEnum)[keyof typeof UserActivityScalarFieldEnum]
 
 
 export const SortOrder = {

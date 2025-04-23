@@ -29,11 +29,21 @@ export type AggregateProblem = {
 export type ProblemAvgAggregateOutputType = {
   timeLimitMs: number | null
   memoryLimitKb: number | null
+  totalSubmissions: number | null
+  acceptedSubmissions: number | null
+  acceptedRate: number | null
+  isDailyChallenge: number | null
+  rating: number | null
 }
 
 export type ProblemSumAggregateOutputType = {
   timeLimitMs: number | null
   memoryLimitKb: number | null
+  totalSubmissions: number | null
+  acceptedSubmissions: number | null
+  acceptedRate: number | null
+  isDailyChallenge: number | null
+  rating: number | null
 }
 
 export type ProblemMinAggregateOutputType = {
@@ -44,7 +54,13 @@ export type ProblemMinAggregateOutputType = {
   difficulty: $Enums.Difficulty | null
   timeLimitMs: number | null
   memoryLimitKb: number | null
+  totalSubmissions: number | null
+  acceptedSubmissions: number | null
+  acceptedRate: number | null
   isPublic: boolean | null
+  isConsumed: boolean | null
+  isDailyChallenge: number | null
+  rating: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -57,7 +73,13 @@ export type ProblemMaxAggregateOutputType = {
   difficulty: $Enums.Difficulty | null
   timeLimitMs: number | null
   memoryLimitKb: number | null
+  totalSubmissions: number | null
+  acceptedSubmissions: number | null
+  acceptedRate: number | null
   isPublic: boolean | null
+  isConsumed: boolean | null
+  isDailyChallenge: number | null
+  rating: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -70,7 +92,13 @@ export type ProblemCountAggregateOutputType = {
   difficulty: number
   timeLimitMs: number
   memoryLimitKb: number
+  totalSubmissions: number
+  acceptedSubmissions: number
+  acceptedRate: number
   isPublic: number
+  isConsumed: number
+  isDailyChallenge: number
+  rating: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -80,11 +108,21 @@ export type ProblemCountAggregateOutputType = {
 export type ProblemAvgAggregateInputType = {
   timeLimitMs?: true
   memoryLimitKb?: true
+  totalSubmissions?: true
+  acceptedSubmissions?: true
+  acceptedRate?: true
+  isDailyChallenge?: true
+  rating?: true
 }
 
 export type ProblemSumAggregateInputType = {
   timeLimitMs?: true
   memoryLimitKb?: true
+  totalSubmissions?: true
+  acceptedSubmissions?: true
+  acceptedRate?: true
+  isDailyChallenge?: true
+  rating?: true
 }
 
 export type ProblemMinAggregateInputType = {
@@ -95,7 +133,13 @@ export type ProblemMinAggregateInputType = {
   difficulty?: true
   timeLimitMs?: true
   memoryLimitKb?: true
+  totalSubmissions?: true
+  acceptedSubmissions?: true
+  acceptedRate?: true
   isPublic?: true
+  isConsumed?: true
+  isDailyChallenge?: true
+  rating?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -108,7 +152,13 @@ export type ProblemMaxAggregateInputType = {
   difficulty?: true
   timeLimitMs?: true
   memoryLimitKb?: true
+  totalSubmissions?: true
+  acceptedSubmissions?: true
+  acceptedRate?: true
   isPublic?: true
+  isConsumed?: true
+  isDailyChallenge?: true
+  rating?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -121,7 +171,13 @@ export type ProblemCountAggregateInputType = {
   difficulty?: true
   timeLimitMs?: true
   memoryLimitKb?: true
+  totalSubmissions?: true
+  acceptedSubmissions?: true
+  acceptedRate?: true
   isPublic?: true
+  isConsumed?: true
+  isDailyChallenge?: true
+  rating?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -221,7 +277,13 @@ export type ProblemGroupByOutputType = {
   difficulty: $Enums.Difficulty
   timeLimitMs: number
   memoryLimitKb: number
+  totalSubmissions: number
+  acceptedSubmissions: number
+  acceptedRate: number
   isPublic: boolean
+  isConsumed: boolean
+  isDailyChallenge: number
+  rating: number
   createdAt: Date
   updatedAt: Date
   _count: ProblemCountAggregateOutputType | null
@@ -257,7 +319,13 @@ export type ProblemWhereInput = {
   difficulty?: Prisma.EnumDifficultyFilter<"Problem"> | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFilter<"Problem"> | number
   memoryLimitKb?: Prisma.IntFilter<"Problem"> | number
+  totalSubmissions?: Prisma.IntFilter<"Problem"> | number
+  acceptedSubmissions?: Prisma.IntFilter<"Problem"> | number
+  acceptedRate?: Prisma.FloatFilter<"Problem"> | number
   isPublic?: Prisma.BoolFilter<"Problem"> | boolean
+  isConsumed?: Prisma.BoolFilter<"Problem"> | boolean
+  isDailyChallenge?: Prisma.IntFilter<"Problem"> | number
+  rating?: Prisma.IntFilter<"Problem"> | number
   createdAt?: Prisma.DateTimeFilter<"Problem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Problem"> | Date | string
   tags?: Prisma.ProblemTagListRelationFilter
@@ -273,7 +341,13 @@ export type ProblemOrderByWithRelationInput = {
   difficulty?: Prisma.SortOrder
   timeLimitMs?: Prisma.SortOrder
   memoryLimitKb?: Prisma.SortOrder
+  totalSubmissions?: Prisma.SortOrder
+  acceptedSubmissions?: Prisma.SortOrder
+  acceptedRate?: Prisma.SortOrder
   isPublic?: Prisma.SortOrder
+  isConsumed?: Prisma.SortOrder
+  isDailyChallenge?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   tags?: Prisma.ProblemTagOrderByRelationAggregateInput
@@ -292,7 +366,13 @@ export type ProblemWhereUniqueInput = Prisma.AtLeast<{
   difficulty?: Prisma.EnumDifficultyFilter<"Problem"> | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFilter<"Problem"> | number
   memoryLimitKb?: Prisma.IntFilter<"Problem"> | number
+  totalSubmissions?: Prisma.IntFilter<"Problem"> | number
+  acceptedSubmissions?: Prisma.IntFilter<"Problem"> | number
+  acceptedRate?: Prisma.FloatFilter<"Problem"> | number
   isPublic?: Prisma.BoolFilter<"Problem"> | boolean
+  isConsumed?: Prisma.BoolFilter<"Problem"> | boolean
+  isDailyChallenge?: Prisma.IntFilter<"Problem"> | number
+  rating?: Prisma.IntFilter<"Problem"> | number
   createdAt?: Prisma.DateTimeFilter<"Problem"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Problem"> | Date | string
   tags?: Prisma.ProblemTagListRelationFilter
@@ -308,7 +388,13 @@ export type ProblemOrderByWithAggregationInput = {
   difficulty?: Prisma.SortOrder
   timeLimitMs?: Prisma.SortOrder
   memoryLimitKb?: Prisma.SortOrder
+  totalSubmissions?: Prisma.SortOrder
+  acceptedSubmissions?: Prisma.SortOrder
+  acceptedRate?: Prisma.SortOrder
   isPublic?: Prisma.SortOrder
+  isConsumed?: Prisma.SortOrder
+  isDailyChallenge?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.ProblemCountOrderByAggregateInput
@@ -329,7 +415,13 @@ export type ProblemScalarWhereWithAggregatesInput = {
   difficulty?: Prisma.EnumDifficultyWithAggregatesFilter<"Problem"> | $Enums.Difficulty
   timeLimitMs?: Prisma.IntWithAggregatesFilter<"Problem"> | number
   memoryLimitKb?: Prisma.IntWithAggregatesFilter<"Problem"> | number
+  totalSubmissions?: Prisma.IntWithAggregatesFilter<"Problem"> | number
+  acceptedSubmissions?: Prisma.IntWithAggregatesFilter<"Problem"> | number
+  acceptedRate?: Prisma.FloatWithAggregatesFilter<"Problem"> | number
   isPublic?: Prisma.BoolWithAggregatesFilter<"Problem"> | boolean
+  isConsumed?: Prisma.BoolWithAggregatesFilter<"Problem"> | boolean
+  isDailyChallenge?: Prisma.IntWithAggregatesFilter<"Problem"> | number
+  rating?: Prisma.IntWithAggregatesFilter<"Problem"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Problem"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Problem"> | Date | string
 }
@@ -342,7 +434,13 @@ export type ProblemCreateInput = {
   difficulty?: $Enums.Difficulty
   timeLimitMs?: number
   memoryLimitKb?: number
+  totalSubmissions?: number
+  acceptedSubmissions?: number
+  acceptedRate?: number
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   tags?: Prisma.ProblemTagCreateNestedManyWithoutProblemInput
@@ -358,7 +456,13 @@ export type ProblemUncheckedCreateInput = {
   difficulty?: $Enums.Difficulty
   timeLimitMs?: number
   memoryLimitKb?: number
+  totalSubmissions?: number
+  acceptedSubmissions?: number
+  acceptedRate?: number
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   tags?: Prisma.ProblemTagUncheckedCreateNestedManyWithoutProblemInput
@@ -374,7 +478,13 @@ export type ProblemUpdateInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tags?: Prisma.ProblemTagUpdateManyWithoutProblemNestedInput
@@ -390,7 +500,13 @@ export type ProblemUncheckedUpdateInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tags?: Prisma.ProblemTagUncheckedUpdateManyWithoutProblemNestedInput
@@ -406,7 +522,13 @@ export type ProblemCreateManyInput = {
   difficulty?: $Enums.Difficulty
   timeLimitMs?: number
   memoryLimitKb?: number
+  totalSubmissions?: number
+  acceptedSubmissions?: number
+  acceptedRate?: number
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -419,7 +541,13 @@ export type ProblemUpdateManyMutationInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -432,7 +560,13 @@ export type ProblemUncheckedUpdateManyInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -445,7 +579,13 @@ export type ProblemCountOrderByAggregateInput = {
   difficulty?: Prisma.SortOrder
   timeLimitMs?: Prisma.SortOrder
   memoryLimitKb?: Prisma.SortOrder
+  totalSubmissions?: Prisma.SortOrder
+  acceptedSubmissions?: Prisma.SortOrder
+  acceptedRate?: Prisma.SortOrder
   isPublic?: Prisma.SortOrder
+  isConsumed?: Prisma.SortOrder
+  isDailyChallenge?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -453,6 +593,11 @@ export type ProblemCountOrderByAggregateInput = {
 export type ProblemAvgOrderByAggregateInput = {
   timeLimitMs?: Prisma.SortOrder
   memoryLimitKb?: Prisma.SortOrder
+  totalSubmissions?: Prisma.SortOrder
+  acceptedSubmissions?: Prisma.SortOrder
+  acceptedRate?: Prisma.SortOrder
+  isDailyChallenge?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
 }
 
 export type ProblemMaxOrderByAggregateInput = {
@@ -463,7 +608,13 @@ export type ProblemMaxOrderByAggregateInput = {
   difficulty?: Prisma.SortOrder
   timeLimitMs?: Prisma.SortOrder
   memoryLimitKb?: Prisma.SortOrder
+  totalSubmissions?: Prisma.SortOrder
+  acceptedSubmissions?: Prisma.SortOrder
+  acceptedRate?: Prisma.SortOrder
   isPublic?: Prisma.SortOrder
+  isConsumed?: Prisma.SortOrder
+  isDailyChallenge?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -476,7 +627,13 @@ export type ProblemMinOrderByAggregateInput = {
   difficulty?: Prisma.SortOrder
   timeLimitMs?: Prisma.SortOrder
   memoryLimitKb?: Prisma.SortOrder
+  totalSubmissions?: Prisma.SortOrder
+  acceptedSubmissions?: Prisma.SortOrder
+  acceptedRate?: Prisma.SortOrder
   isPublic?: Prisma.SortOrder
+  isConsumed?: Prisma.SortOrder
+  isDailyChallenge?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -484,6 +641,11 @@ export type ProblemMinOrderByAggregateInput = {
 export type ProblemSumOrderByAggregateInput = {
   timeLimitMs?: Prisma.SortOrder
   memoryLimitKb?: Prisma.SortOrder
+  totalSubmissions?: Prisma.SortOrder
+  acceptedSubmissions?: Prisma.SortOrder
+  acceptedRate?: Prisma.SortOrder
+  isDailyChallenge?: Prisma.SortOrder
+  rating?: Prisma.SortOrder
 }
 
 export type ProblemScalarRelationFilter = {
@@ -495,7 +657,7 @@ export type EnumDifficultyFieldUpdateOperationsInput = {
   set?: $Enums.Difficulty
 }
 
-export type IntFieldUpdateOperationsInput = {
+export type FloatFieldUpdateOperationsInput = {
   set?: number
   increment?: number
   decrement?: number
@@ -557,7 +719,13 @@ export type ProblemCreateWithoutTestCasesInput = {
   difficulty?: $Enums.Difficulty
   timeLimitMs?: number
   memoryLimitKb?: number
+  totalSubmissions?: number
+  acceptedSubmissions?: number
+  acceptedRate?: number
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   tags?: Prisma.ProblemTagCreateNestedManyWithoutProblemInput
@@ -572,7 +740,13 @@ export type ProblemUncheckedCreateWithoutTestCasesInput = {
   difficulty?: $Enums.Difficulty
   timeLimitMs?: number
   memoryLimitKb?: number
+  totalSubmissions?: number
+  acceptedSubmissions?: number
+  acceptedRate?: number
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   tags?: Prisma.ProblemTagUncheckedCreateNestedManyWithoutProblemInput
@@ -603,7 +777,13 @@ export type ProblemUpdateWithoutTestCasesInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tags?: Prisma.ProblemTagUpdateManyWithoutProblemNestedInput
@@ -618,7 +798,13 @@ export type ProblemUncheckedUpdateWithoutTestCasesInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tags?: Prisma.ProblemTagUncheckedUpdateManyWithoutProblemNestedInput
@@ -633,7 +819,13 @@ export type ProblemCreateWithoutTagsInput = {
   difficulty?: $Enums.Difficulty
   timeLimitMs?: number
   memoryLimitKb?: number
+  totalSubmissions?: number
+  acceptedSubmissions?: number
+  acceptedRate?: number
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   testCases?: Prisma.TestCaseCreateNestedManyWithoutProblemInput
@@ -648,7 +840,13 @@ export type ProblemUncheckedCreateWithoutTagsInput = {
   difficulty?: $Enums.Difficulty
   timeLimitMs?: number
   memoryLimitKb?: number
+  totalSubmissions?: number
+  acceptedSubmissions?: number
+  acceptedRate?: number
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   testCases?: Prisma.TestCaseUncheckedCreateNestedManyWithoutProblemInput
@@ -679,7 +877,13 @@ export type ProblemUpdateWithoutTagsInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   testCases?: Prisma.TestCaseUpdateManyWithoutProblemNestedInput
@@ -694,7 +898,13 @@ export type ProblemUncheckedUpdateWithoutTagsInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   testCases?: Prisma.TestCaseUncheckedUpdateManyWithoutProblemNestedInput
@@ -709,7 +919,13 @@ export type ProblemCreateWithoutSubmissionsInput = {
   difficulty?: $Enums.Difficulty
   timeLimitMs?: number
   memoryLimitKb?: number
+  totalSubmissions?: number
+  acceptedSubmissions?: number
+  acceptedRate?: number
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   tags?: Prisma.ProblemTagCreateNestedManyWithoutProblemInput
@@ -724,7 +940,13 @@ export type ProblemUncheckedCreateWithoutSubmissionsInput = {
   difficulty?: $Enums.Difficulty
   timeLimitMs?: number
   memoryLimitKb?: number
+  totalSubmissions?: number
+  acceptedSubmissions?: number
+  acceptedRate?: number
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: number
+  rating?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   tags?: Prisma.ProblemTagUncheckedCreateNestedManyWithoutProblemInput
@@ -755,7 +977,13 @@ export type ProblemUpdateWithoutSubmissionsInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tags?: Prisma.ProblemTagUpdateManyWithoutProblemNestedInput
@@ -770,7 +998,13 @@ export type ProblemUncheckedUpdateWithoutSubmissionsInput = {
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   timeLimitMs?: Prisma.IntFieldUpdateOperationsInput | number
   memoryLimitKb?: Prisma.IntFieldUpdateOperationsInput | number
+  totalSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedSubmissions?: Prisma.IntFieldUpdateOperationsInput | number
+  acceptedRate?: Prisma.FloatFieldUpdateOperationsInput | number
   isPublic?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isConsumed?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  isDailyChallenge?: Prisma.IntFieldUpdateOperationsInput | number
+  rating?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tags?: Prisma.ProblemTagUncheckedUpdateManyWithoutProblemNestedInput
@@ -834,7 +1068,13 @@ export type ProblemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   difficulty?: boolean
   timeLimitMs?: boolean
   memoryLimitKb?: boolean
+  totalSubmissions?: boolean
+  acceptedSubmissions?: boolean
+  acceptedRate?: boolean
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: boolean
+  rating?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   tags?: boolean | Prisma.Problem$tagsArgs<ExtArgs>
@@ -851,7 +1091,13 @@ export type ProblemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   difficulty?: boolean
   timeLimitMs?: boolean
   memoryLimitKb?: boolean
+  totalSubmissions?: boolean
+  acceptedSubmissions?: boolean
+  acceptedRate?: boolean
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: boolean
+  rating?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["problem"]>
@@ -864,7 +1110,13 @@ export type ProblemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   difficulty?: boolean
   timeLimitMs?: boolean
   memoryLimitKb?: boolean
+  totalSubmissions?: boolean
+  acceptedSubmissions?: boolean
+  acceptedRate?: boolean
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: boolean
+  rating?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["problem"]>
@@ -877,12 +1129,18 @@ export type ProblemSelectScalar = {
   difficulty?: boolean
   timeLimitMs?: boolean
   memoryLimitKb?: boolean
+  totalSubmissions?: boolean
+  acceptedSubmissions?: boolean
+  acceptedRate?: boolean
   isPublic?: boolean
+  isConsumed?: boolean
+  isDailyChallenge?: boolean
+  rating?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ProblemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "slug" | "description" | "difficulty" | "timeLimitMs" | "memoryLimitKb" | "isPublic" | "createdAt" | "updatedAt", ExtArgs["result"]["problem"]>
+export type ProblemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "title" | "slug" | "description" | "difficulty" | "timeLimitMs" | "memoryLimitKb" | "totalSubmissions" | "acceptedSubmissions" | "acceptedRate" | "isPublic" | "isConsumed" | "isDailyChallenge" | "rating" | "createdAt" | "updatedAt", ExtArgs["result"]["problem"]>
 export type ProblemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   tags?: boolean | Prisma.Problem$tagsArgs<ExtArgs>
   testCases?: boolean | Prisma.Problem$testCasesArgs<ExtArgs>
@@ -907,7 +1165,13 @@ export type $ProblemPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     difficulty: $Enums.Difficulty
     timeLimitMs: number
     memoryLimitKb: number
+    totalSubmissions: number
+    acceptedSubmissions: number
+    acceptedRate: number
     isPublic: boolean
+    isConsumed: boolean
+    isDailyChallenge: number
+    rating: number
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["problem"]>
@@ -1343,7 +1607,13 @@ export interface ProblemFieldRefs {
   readonly difficulty: Prisma.FieldRef<"Problem", 'Difficulty'>
   readonly timeLimitMs: Prisma.FieldRef<"Problem", 'Int'>
   readonly memoryLimitKb: Prisma.FieldRef<"Problem", 'Int'>
+  readonly totalSubmissions: Prisma.FieldRef<"Problem", 'Int'>
+  readonly acceptedSubmissions: Prisma.FieldRef<"Problem", 'Int'>
+  readonly acceptedRate: Prisma.FieldRef<"Problem", 'Float'>
   readonly isPublic: Prisma.FieldRef<"Problem", 'Boolean'>
+  readonly isConsumed: Prisma.FieldRef<"Problem", 'Boolean'>
+  readonly isDailyChallenge: Prisma.FieldRef<"Problem", 'Int'>
+  readonly rating: Prisma.FieldRef<"Problem", 'Int'>
   readonly createdAt: Prisma.FieldRef<"Problem", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Problem", 'DateTime'>
 }

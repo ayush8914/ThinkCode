@@ -389,7 +389,8 @@ export const ModelName = {
   TestCase: 'TestCase',
   Tag: 'Tag',
   ProblemTag: 'ProblemTag',
-  Submission: 'Submission'
+  Submission: 'Submission',
+  UserActivity: 'UserActivity'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -405,7 +406,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "problem" | "testCase" | "tag" | "problemTag" | "submission"
+    modelProps: "user" | "problem" | "testCase" | "tag" | "problemTag" | "submission" | "userActivity"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -853,6 +854,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    UserActivity: {
+      payload: Prisma.$UserActivityPayload<ExtArgs>
+      fields: Prisma.UserActivityFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserActivityFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserActivityFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload>
+        }
+        findFirst: {
+          args: Prisma.UserActivityFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserActivityFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload>
+        }
+        findMany: {
+          args: Prisma.UserActivityFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload>[]
+        }
+        create: {
+          args: Prisma.UserActivityCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload>
+        }
+        createMany: {
+          args: Prisma.UserActivityCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserActivityCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload>[]
+        }
+        delete: {
+          args: Prisma.UserActivityDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload>
+        }
+        update: {
+          args: Prisma.UserActivityUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload>
+        }
+        deleteMany: {
+          args: Prisma.UserActivityDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserActivityUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserActivityUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload>[]
+        }
+        upsert: {
+          args: Prisma.UserActivityUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserActivityPayload>
+        }
+        aggregate: {
+          args: Prisma.UserActivityAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserActivity>
+        }
+        groupBy: {
+          args: Prisma.UserActivityGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserActivityGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserActivityCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserActivityCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -900,6 +975,9 @@ export const UserScalarFieldEnum = {
   role: 'role',
   image: 'image',
   provider: 'provider',
+  contestRating: 'contestRating',
+  maxContestRating: 'maxContestRating',
+  globalRanking: 'globalRanking',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -915,7 +993,13 @@ export const ProblemScalarFieldEnum = {
   difficulty: 'difficulty',
   timeLimitMs: 'timeLimitMs',
   memoryLimitKb: 'memoryLimitKb',
+  totalSubmissions: 'totalSubmissions',
+  acceptedSubmissions: 'acceptedSubmissions',
+  acceptedRate: 'acceptedRate',
   isPublic: 'isPublic',
+  isConsumed: 'isConsumed',
+  isDailyChallenge: 'isDailyChallenge',
+  rating: 'rating',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
@@ -968,6 +1052,21 @@ export const SubmissionScalarFieldEnum = {
 } as const
 
 export type SubmissionScalarFieldEnum = (typeof SubmissionScalarFieldEnum)[keyof typeof SubmissionScalarFieldEnum]
+
+
+export const UserActivityScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  date: 'date',
+  submissions: 'submissions',
+  accepted: 'accepted',
+  wrongAnswer: 'wrongAnswer',
+  timeLimit: 'timeLimit',
+  runtimeError: 'runtimeError',
+  compilationError: 'compilationError'
+} as const
+
+export type UserActivityScalarFieldEnum = (typeof UserActivityScalarFieldEnum)[keyof typeof UserActivityScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1029,6 +1128,20 @@ export type ListEnumRoleFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'Int'
+ */
+export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+    
+
+
+/**
+ * Reference to a field of type 'Int[]'
+ */
+export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
  * Reference to a field of type 'DateTime'
  */
 export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -1057,16 +1170,16 @@ export type ListEnumDifficultyFieldRefInput<$PrismaModel> = FieldRefInputType<$P
 
 
 /**
- * Reference to a field of type 'Int'
+ * Reference to a field of type 'Float'
  */
-export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
     
 
 
 /**
- * Reference to a field of type 'Int[]'
+ * Reference to a field of type 'Float[]'
  */
-export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 
@@ -1102,20 +1215,6 @@ export type EnumStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
  * Reference to a field of type 'Status[]'
  */
 export type ListEnumStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Status[]'>
-    
-
-
-/**
- * Reference to a field of type 'Float'
- */
-export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
-    
-
-
-/**
- * Reference to a field of type 'Float[]'
- */
-export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 /**
@@ -1219,6 +1318,7 @@ export type GlobalOmitConfig = {
   tag?: Prisma.TagOmit
   problemTag?: Prisma.ProblemTagOmit
   submission?: Prisma.SubmissionOmit
+  userActivity?: Prisma.UserActivityOmit
 }
 
 /* Types for Logging */
