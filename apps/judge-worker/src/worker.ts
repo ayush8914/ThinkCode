@@ -3,6 +3,7 @@ import { prisma, type Status } from '@repo/db';
 import { CodeExecutor } from './executor.js';
 import type { JudgeTask, TestCase } from './types.js';
 import * as os from 'os';
+import { trackSubmissionActivity } from './activity.js';
 
 class JudgeWorker {
   private redis: Redis;
@@ -59,7 +60,7 @@ class JudgeWorker {
         where: { id: task.problemId },
         include: {
           testCases: {
-            where: { isSample: true }, // Run only hidden test cases
+            where: { isSample: false }, // Run only hidden test cases
             orderBy: { orderIndex: 'asc' },
           },
         },
@@ -96,6 +97,9 @@ class JudgeWorker {
         },
       });
       
+       await trackSubmissionActivity(task.userId, result.status);
+
+
       await this.redis.publish(
         `user:${task.userId}:submissions`,
         JSON.stringify({

@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Activity,
 } from "lucide-react";
+import { ActivityHeatMap } from "@/components/ActivityHeatMap";
 
 const PROBLEMS = [
   { tag: "Array", title: "Two Sum", diff: "Easy", color: "text-emerald-400" },
@@ -286,6 +287,10 @@ export default function Home() {
               <p className="text-xs text-rose-400 mt-2">Coming soon</p>
             </div>
           </div>
+
+          <div className="mb-8">
+  <ActivityHeatMap userId={session.user.id} />
+</div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
