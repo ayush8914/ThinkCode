@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  Users, Code2, Activity, Clock, TrendingUp, 
-  CheckCircle2, XCircle, AlertTriangle 
+  Users, Code2, Activity, TrendingUp, 
 } from 'lucide-react';
 import Link from 'next/link';
 
