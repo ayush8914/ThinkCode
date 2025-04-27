@@ -29,7 +29,10 @@ export async function GET() {
       prisma.submission.findMany({
         orderBy: { createdAt: 'desc' },
         take: 10,
-        include: { user: true, problem: true },
+        include: { 
+          user: { select: { name: true, email: true } }, 
+          problem: { select: { title: true } } 
+        },
       }),
     ]);
     
@@ -53,6 +56,7 @@ export async function GET() {
       },
     });
   } catch (error) {
+    console.error('Failed to fetch admin stats:', error);
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
   }
 }
