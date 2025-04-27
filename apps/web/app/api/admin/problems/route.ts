@@ -12,43 +12,48 @@ export async function GET(request: NextRequest) {
   
   try {
     const searchParams = request.nextUrl.searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
     const search = searchParams.get('search') || '';
     const difficulty = searchParams.get('difficulty') || '';
+    const tag = searchParams.get('tag') || '';
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const offset = parseInt(searchParams.get('offset') || '0');
     
     const where: any = {};
+    
     if (search) {
       where.OR = [
         { title: { contains: search, mode: 'insensitive' } },
         { slug: { contains: search, mode: 'insensitive' } },
       ];
     }
+    
     if (difficulty) {
       where.difficulty = difficulty;
+    }
+    
+    if (tag) {
+      where.tags = {
+        some: {
+          tag: { name: tag },
+        },
+      };
     }
     
     const [problems, total] = await Promise.all([
       prisma.problem.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
         include: {
           tags: { include: { tag: true } },
           _count: { select: { submissions: true, testCases: true } },
         },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
       }),
       prisma.problem.count({ where }),
     ]);
     
-    return NextResponse.json({
-      success: true,
-      problems,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    });
+    return NextResponse.json({ success: true, problems, total });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch problems' }, { status: 500 });
   }
