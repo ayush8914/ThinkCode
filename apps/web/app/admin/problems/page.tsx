@@ -493,7 +493,7 @@ export default function AdminProblemsPage() {
             size="sm"
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="border-white/10 text-white/70"
+            className="border-white/10 text-black/70"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -505,7 +505,7 @@ export default function AdminProblemsPage() {
             size="sm"
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="border-white/10 text-white/70"
+            className="border-white/10 text-black/70"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -516,12 +516,12 @@ export default function AdminProblemsPage() {
         <DialogContent className="bg-[#0f0f14] border-white/10 text-white">
           <DialogHeader>
             <DialogTitle>Delete Problem</DialogTitle>
-            <DialogDescription className="text-white/50">
+            <DialogDescription className="text-white/300">
               Are you sure you want to delete "{problemToDelete?.title}"? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="border-white/10">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="border-white/10 text-black">
               Cancel
             </Button>
             <Button onClick={handleDeleteProblem} className="bg-rose-600 hover:bg-rose-500">
