@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@repo/db';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 export async function GET(request: NextRequest) {
   try {
@@ -113,5 +115,100 @@ export async function GET(request: NextRequest) {
       { success: false, error: 'Failed to fetch problems' },
       { status: 500 }
     );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  
+  // Only ADMIN and PROBLEM_SETTER can create problems
+  if (!session?.user || (session.user.role !== 'ADMIN' && session.user.role !== 'PROBLEM_SETTER')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+  
+  try {
+    const body = await request.json();
+    const { 
+      title, 
+      slug, 
+      description, 
+      difficulty, 
+      timeLimitMs, 
+      memoryLimitKb, 
+      isPublic, 
+      testCases, 
+      tags 
+    } = body;
+    
+    // Validate required fields
+    if (!title || !slug) {
+      return NextResponse.json({ error: 'Title and slug are required' }, { status: 400 });
+    }
+    
+    // Check if slug already exists
+    const existing = await prisma.problem.findUnique({
+      where: { slug },
+    });
+    
+    if (existing) {
+      return NextResponse.json({ error: 'Slug already exists' }, { status: 400 });
+    }
+    
+    // Create problem with test cases and tags in a transaction
+    const problem = await prisma.$transaction(async (tx) => {
+      // Create the problem
+      const newProblem = await tx.problem.create({
+        data: {
+          title,
+          slug,
+          description: description || '',
+          difficulty: difficulty || 'EASY',
+          timeLimitMs: timeLimitMs || 1000,
+          memoryLimitKb: memoryLimitKb || 262144,
+          isPublic: isPublic ?? true,
+        },
+      });
+      
+      // Add tags if provided
+      if (tags && tags.length > 0) {
+        for (const tagId of tags) {
+          await tx.problemTag.create({
+            data: {
+              problemId: newProblem.id,
+              tagId: tagId,
+            },
+          });
+        }
+      }
+      
+      // Add test cases if provided
+      if (testCases && testCases.length > 0) {
+        for (let i = 0; i < testCases.length; i++) {
+          const tc = testCases[i];
+          await tx.testCase.create({
+            data: {
+              problemId: newProblem.id,
+              input: tc.input,
+              output: tc.output,
+              isSample: tc.isSample || false,
+              explanation: tc.explanation || null,
+              orderIndex: i,
+            },
+          });
+        }
+      }
+      
+      return newProblem;
+    });
+    
+    return NextResponse.json({ 
+      success: true, 
+      problem: { id: problem.id, slug: problem.slug },
+      slug: problem.slug,
+    });
+    
+  } catch (error) {
+    console.error('Failed to create problem:', error);
+    return NextResponse.json({ error: 'Failed to create problem' }, { status: 500 });
   }
 }

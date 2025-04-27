@@ -231,7 +231,7 @@ Describe the output format...
       if (data.success) {
         setSuccess('Problem created successfully!');
         setTimeout(() => {
-          router.push(`/problems/${data.slug}`);
+          router.push(`/admin/problems`);
         }, 1500);
       } else {
         setError(data.error || 'Failed to create problem');
@@ -398,12 +398,12 @@ Describe the output format...
                       <SelectTrigger className="bg-white/5 border-white/10 text-white text-sm flex-1">
                         <SelectValue placeholder={tagsLoading ? "Loading tags..." : "Select a tag"} />
                       </SelectTrigger>
-                      <SelectContent className="bg-[#0f0f14] border-white/10 text-white">
+                      <SelectContent className="bg-[#0f0f14] border-white/10 text-white hover:text-mist-200">
                         {availableTags.map((tag) => (
                           <SelectItem 
                             key={tag.id} 
                             value={tag.id}
-                            className="text-white hover:bg-white/10 focus:bg-white/10"
+                            className="text-white hover:bg-white/10 hover:text-white"
                           >
                             {tag.name}
                           </SelectItem>
@@ -415,7 +415,7 @@ Describe the output format...
                       onClick={addTag}
                       variant="outline"
                       size="sm"
-                      className="border-white/10 text-white hover:bg-white/10"
+                      className="border-white/10 text-white hover:bg-white/10 text-black"
                       disabled={!selectedTagId}
                     >
                       <Plus className="h-4 w-4" />
@@ -455,10 +455,10 @@ Describe the output format...
                     </CardTitle>
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
                       <TabsList className="bg-transparent border border-white/10 h-8">
-                        <TabsTrigger value="write" className="text-xs px-3 py-1 text-white/70 data-[state=active]:bg-violet-500/20 data-[state=active]:text-white">
+                        <TabsTrigger value="write" className="text-xs px-3 py-1 text-white/70 data-[state=active]:bg-violet-500/20 data-[state=active]:text-white hover:text-white">
                           Write
                         </TabsTrigger>
-                        <TabsTrigger value="preview" className="text-xs px-3 py-1 text-white/70 data-[state=active]:bg-violet-500/20 data-[state=active]:text-white">
+                        <TabsTrigger value="preview" className="text-xs px-3 py-1 text-white/70 data-[state=active]:bg-violet-500/20 data-[state=active]:text-white hover:text-white">
                           Preview
                         </TabsTrigger>
                       </TabsList>
@@ -555,7 +555,7 @@ Describe the output format...
                       onClick={addTestCase}
                       variant="outline"
                       size="sm"
-                      className="border-white/10 text-white hover:bg-white/10 text-xs"
+                      className="border-white/10 text-white bg-white/10 hover:bg-mist-200 hover:text-black "
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Add Test Case

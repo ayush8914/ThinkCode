@@ -4,6 +4,8 @@ import Link from 'next/link';
 import CodeEditor from '@/components/CodeEditor';
 import MarkdownRenderer from '@/components/MarkdownRenderer';
 import { Clock, HardDrive, ArrowLeft } from 'lucide-react';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { getServerSession } from 'next-auth';
 
 const difficultyColors = {
   EASY: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/5',
@@ -17,7 +19,8 @@ interface PageProps {
 
 export default async function ProblemPage({ params }: PageProps) {
   const { slug } = await params;
-  
+  const session = await getServerSession(authOptions);
+
   const problem = await prisma.problem.findUnique({
     where: { slug },
     include: {
@@ -54,7 +57,7 @@ export default async function ProblemPage({ params }: PageProps) {
         <div className="border-b border-white/10 px-6 py-4">
           <div className="flex items-center gap-4">
             <Link
-              href="/problems"
+              href={session?.user?.role === 'ADMIN' ? '/admin/problems' : '/'}
               className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-white/50 hover:text-white/80 hover:bg-white/5 transition-all duration-200 border border-transparent hover:border-white/10"
             >
               <ArrowLeft className="h-4 w-4" />

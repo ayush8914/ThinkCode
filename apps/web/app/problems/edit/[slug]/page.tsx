@@ -244,26 +244,26 @@ export default function EditProblemPage({ params }: { params: Promise<{ slug: st
     }
     
     try {
-      const res = await fetch(`/api/problems/${problemId}`, {
+            const res = await fetch(`/api/problems/${problemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           description,
-          testCases: testCases.map(({ id, orderIndex, ...tc }: TestCase) => ({
+          testCases: testCases.map(({ id, orderIndex, ...tc }) => ({
             ...tc,
             id: id.startsWith('temp-') ? undefined : id,
           })),
-          tags: selectedTags.map((t: Tag) => t.id),
+          tags: selectedTags.map(t => t.id),
         }),
       });
-      
+            
       const data = await res.json();
       
       if (data.success) {
         setSuccess('Problem updated successfully!');
         setTimeout(() => {
-          router.push(`/problems/${data.slug}`);
+          router.push(`/admin/problems`);
         }, 1500);
       } else {
         setError(data.error || 'Failed to update problem');

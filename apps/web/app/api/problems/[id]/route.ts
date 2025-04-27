@@ -7,14 +7,20 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('PUT /api/problems/[id] called');
+  
   const session = await getServerSession(authOptions);
   
   if (!session?.user || (session.user.role !== 'ADMIN' && session.user.role !== 'PROBLEM_SETTER')) {
+    console.log('Unauthorized, role:', session?.user?.role);
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   
   try {
     const { id } = await params;
+    const body = await request.json();
+    console.log('Updating problem:', id, body);
+    
     const { 
       title, 
       slug, 
@@ -25,8 +31,9 @@ export async function PUT(
       isPublic, 
       testCases, 
       tags 
-    } = await request.json();
+    } = body;
     
+    // Check if slug already exists on another problem
     const existing = await prisma.problem.findFirst({
       where: { 
         slug, 
@@ -38,72 +45,54 @@ export async function PUT(
       return NextResponse.json({ error: 'Slug already exists' }, { status: 400 });
     }
     
-    await prisma.$transaction(async (tx) => {
-      await tx.problem.update({
-        where: { id },
-        data: {
-          title,
-          slug,
-          description,
-          difficulty,
-          timeLimitMs,
-          memoryLimitKb,
-          isPublic,
-          tags: { deleteMany: {} },
-        },
-      });
+    // Update problem basic info
+    await prisma.problem.update({
+      where: { id },
+      data: {
+        title,
+        slug,
+        description,
+        difficulty,
+        timeLimitMs,
+        memoryLimitKb,
+        isPublic,
+      },
+    });
+    
+    // Update tags if provided
+    if (tags && tags.length > 0) {
+      await prisma.problemTag.deleteMany({ where: { problemId: id } });
       
-      if (tags && tags.length > 0) {
-        await tx.problem.update({
-          where: { id },
+      for (const tagId of tags) {
+        await prisma.problemTag.create({
           data: {
-            tags: {
-              create: tags.map((tagId: string) => ({
-                tag: { connect: { id: tagId } },
-              })),
-            },
+            problemId: id,
+            tagId: tagId,
           },
         });
       }
+    }
+    
+    // Update test cases if provided
+    if (testCases && testCases.length > 0) {
+      // Delete existing test cases
+      await prisma.testCase.deleteMany({ where: { problemId: id } });
       
-      const existingTestCaseIds = testCases
-        .filter((tc: any) => tc.id && !tc.id.startsWith('temp-'))
-        .map((tc: any) => tc.id);
-      
-      await tx.testCase.deleteMany({
-        where: {
-          problemId: id,
-          NOT: { id: { in: existingTestCaseIds } },
-        },
-      });
-      
+      // Create new test cases
       for (let i = 0; i < testCases.length; i++) {
         const tc = testCases[i];
-        if (tc.id && !tc.id.startsWith('temp-')) {
-          await tx.testCase.update({
-            where: { id: tc.id },
-            data: {
-              input: tc.input,
-              output: tc.output,
-              isSample: tc.isSample || false,
-              explanation: tc.explanation || null,
-              orderIndex: i,
-            },
-          });
-        } else {
-          await tx.testCase.create({
-            data: {
-              problemId: id,
-              input: tc.input,
-              output: tc.output,
-              isSample: tc.isSample || false,
-              explanation: tc.explanation || null,
-              orderIndex: i,
-            },
-          });
-        }
+        await prisma.testCase.create({
+          data: {
+            problemId: id,
+            input: tc.input,
+            output: tc.output,
+            isSample: tc.isSample || false,
+            explanation: tc.explanation || null,
+            orderIndex: i,
+          },
+        });
       }
-    });
+    }
     
     return NextResponse.json({ success: true, slug });
   } catch (error) {
