@@ -4,7 +4,7 @@ CODE_FILE=$2
 INPUT_FILE=$3
 TIME_LIMIT_MS=$4
 MEMORY_LIMIT_KB=$5
-BATCH_MODE=$6
+EXECUTION_MODE=$6
 
 TIME_LIMIT_SEC=$((TIME_LIMIT_MS / 1000))
 [ $TIME_LIMIT_SEC -lt 1 ] && TIME_LIMIT_SEC=1
@@ -13,7 +13,11 @@ WORK_DIR=$(mktemp -d)
 cd "$WORK_DIR"
 trap 'cd /; rm -rf "$WORK_DIR"' EXIT
 
-# Portable timeout function (macOS + Linux)
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DRIVER_DIR="$SCRIPT_DIR/../drivers"
+
+
 run_with_timeout() {
     local timeout_sec=$1
     shift
@@ -24,7 +28,6 @@ run_with_timeout() {
         return $?
     fi
     
-    # Fallback for macOS (no GNU timeout)
     $cmd &
     local pid=$!
     local elapsed=0
@@ -40,174 +43,131 @@ run_with_timeout() {
     return $?
 }
 
-if [ "$BATCH_MODE" = "--batch" ]; then
+if [ "$EXECUTION_MODE" = "--driver" ]; then
+    # ============================================
+    # DRIVER MODE: One execution for all test cases
+    # ============================================
     case $LANGUAGE in
-        "PYTHON")
-            python3 -c "
-import subprocess, sys, tempfile, os
-content = sys.stdin.read()
-# Split and strip each test case to remove surrounding whitespace
-test_cases = [tc.strip() for tc in content.split('\n---TEST_CASE---\n') if tc.strip() != '']
-for inp in test_cases:
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.in', delete=False) as f:
-        f.write(inp)
-        temp_in = f.name
-    try:
-        proc = subprocess.Popen(['python3', '$CODE_FILE'], stdin=open(temp_in),
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        try:
-            stdout, _ = proc.communicate(timeout=$TIME_LIMIT_SEC)
-            print('---OUTPUT---')
-            out = stdout.rstrip('\n')
-            print(out)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            print('---OUTPUT---')
-            print('TIME_LIMIT_EXCEEDED')
-    finally:
-        os.unlink(temp_in)
-" < "$INPUT_FILE"
-            ;;
+  "CPP")
+    DRIVER_FILE="$WORK_DIR/driver.cpp"
+    
+    # Write headers
+    echo "#include <iostream>" > "$DRIVER_FILE"
+    echo "#include <vector>" >> "$DRIVER_FILE"
+    echo "#include <string>" >> "$DRIVER_FILE"
+    echo "#include <algorithm>" >> "$DRIVER_FILE"
+    echo "#include <cmath>" >> "$DRIVER_FILE"
+    echo "using namespace std;" >> "$DRIVER_FILE"
+    echo "" >> "$DRIVER_FILE"
+    
+    # Append user code
+    cat "$CODE_FILE" >> "$DRIVER_FILE"
+    echo "" >> "$DRIVER_FILE"
+    
+    # Append driver from file
+    cat "$DRIVER_DIR/cpp_driver.cpp" >> "$DRIVER_FILE"
+    
+    # Compile
+    g++ -std=c++17 -O2 -o program "$DRIVER_FILE" 2> compile_error.txt
+    if [ $? -ne 0 ]; then
+        echo "COMPILATION_ERROR"
+        cat compile_error.txt
+        exit 0
+    fi
+    
+    # Run
+    ./program < "$INPUT_FILE"
+    ;;
             
-        "CPP")
-            g++ -std=c++17 -O2 -o program "$CODE_FILE" 2> compile_error.txt
-            if [ $? -ne 0 ]; then
-                echo "COMPILATION_ERROR"
-                cat compile_error.txt
-                exit 0
-            fi
-            python3 -c "
-import subprocess, sys, tempfile, os
-content = sys.stdin.read()
-test_cases = [tc.strip() for tc in content.split('\n---TEST_CASE---\n') if tc.strip() != '']
-for inp in test_cases:
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.in', delete=False) as f:
-        f.write(inp)
-        temp_in = f.name
-    try:
-        proc = subprocess.Popen(['$WORK_DIR/program'], stdin=open(temp_in),
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        try:
-            stdout, stderr = proc.communicate(timeout=$TIME_LIMIT_SEC)
-            print('---OUTPUT---')
-            out = stdout.rstrip('\n')
-            print(out)
-            if stderr and proc.returncode != 0:
-                print('---STDERR---', file=sys.stderr)
-                print(stderr.rstrip('\n'), file=sys.stderr)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            print('---OUTPUT---')
-            print('TIME_LIMIT_EXCEEDED')
-    finally:
-        os.unlink(temp_in)
-" < "$INPUT_FILE"
-            rm -f program
-            ;;
+   "PYTHON")
+    DRIVER_FILE="$WORK_DIR/driver.py"
+    
+    cat > "$DRIVER_FILE" << 'HEADER_EOF'
+import sys
+from io import StringIO
+
+HEADER_EOF
+    
+    echo "" >> "$DRIVER_FILE"
+    
+    cat "$CODE_FILE" >> "$DRIVER_FILE"
+    echo "" >> "$DRIVER_FILE"
+    
+    cat "$DRIVER_DIR/python_driver.py" >> "$DRIVER_FILE"
+    
+    # Run
+    python3 "$DRIVER_FILE" < "$INPUT_FILE"
+    ;;
             
-        "C")
-            gcc -O2 -o program "$CODE_FILE" 2> compile_error.txt
-            if [ $? -ne 0 ]; then
-                echo "COMPILATION_ERROR"
-                cat compile_error.txt
-                exit 0
-            fi
-            python3 -c "
-import subprocess, sys, tempfile, os
-content = sys.stdin.read()
-test_cases = [tc.strip() for tc in content.split('\n---TEST_CASE---\n') if tc.strip() != '']
-for inp in test_cases:
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.in', delete=False) as f:
-        f.write(inp)
-        temp_in = f.name
-    try:
-        proc = subprocess.Popen(['$WORK_DIR/program'], stdin=open(temp_in),
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        try:
-            stdout, stderr = proc.communicate(timeout=$TIME_LIMIT_SEC)
-            print('---OUTPUT---')
-            out = stdout.strip()
-            print(out)
-            if stderr and proc.returncode != 0:
-                print('---STDERR---', file=sys.stderr)
-                print(stderr.rstrip('\n'), file=sys.stderr)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            print('---OUTPUT---')
-            print('TIME_LIMIT_EXCEEDED')
-    finally:
-        os.unlink(temp_in)
-" < "$INPUT_FILE"
-            rm -f program
-            ;;
+  "C")
+    DRIVER_FILE="$WORK_DIR/driver.c"
+    
+    # Write headers directly
+    cat > "$DRIVER_FILE" << 'HEADER_EOF'
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <math.h>
+#include <limits.h>
+#include <stdbool.h>
+
+HEADER_EOF
+    
+    echo "" >> "$DRIVER_FILE"
+    
+    # Append user code
+    cat "$CODE_FILE" >> "$DRIVER_FILE"
+    echo "" >> "$DRIVER_FILE"
+    
+    # Append driver directly
+    cat >> "$DRIVER_FILE" << 'DRIVER_EOF'
+int main() {
+    int t;
+    scanf("%d", &t);
+    getchar(); // Consume newline after t
+    
+    while (t--) {
+        solve();
+    }
+    
+    return 0;
+}
+DRIVER_EOF
+    
+    # Compile
+    gcc -O2 -o program "$DRIVER_FILE" 2> compile_error.txt
+    if [ $? -ne 0 ]; then
+        echo "COMPILATION_ERROR"
+        cat compile_error.txt
+        exit 0
+    fi
+    
+    # Run
+    ./program < "$INPUT_FILE"
+    ;;
             
-        "JS"|"JAVASCRIPT")
-            python3 -c "
-import subprocess, sys, tempfile, os
-content = sys.stdin.read()
-test_cases = [tc.strip() for tc in content.split('\n---TEST_CASE---\n') if tc.strip() != '']
-for inp in test_cases:
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.in', delete=False) as f:
-        f.write(inp)
-        temp_in = f.name
-    try:
-        proc = subprocess.Popen(['node', '$CODE_FILE'], stdin=open(temp_in),
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        try:
-            stdout, _ = proc.communicate(timeout=$TIME_LIMIT_SEC)
-            print('---OUTPUT---')
-            out = stdout.rstrip('\n')
-            print(out)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            print('---OUTPUT---')
-            print('TIME_LIMIT_EXCEEDED')
-    finally:
-        os.unlink(temp_in)
-" < "$INPUT_FILE"
-            ;;
-            
-        *)
-            echo "INTERNAL_ERROR"
-            echo "Unsupported language: $LANGUAGE"
-            exit 1
-            ;;
+   "JS"|"JAVASCRIPT")
+    DRIVER_FILE="$WORK_DIR/driver.js"
+    
+    # Write headers
+    cat > "$DRIVER_FILE" << 'HEADER_EOF'
+const fs = require('fs');
+
+HEADER_EOF
+    
+    echo "" >> "$DRIVER_FILE"
+    
+    # Append user code FIRST
+    cat "$CODE_FILE" >> "$DRIVER_FILE"
+    echo "" >> "$DRIVER_FILE"
+    
+    # Append driver code SECOND (so it runs after user code is defined)
+    cat "$DRIVER_DIR/js_driver.js" >> "$DRIVER_FILE"
+    
+    node "$DRIVER_FILE" < "$INPUT_FILE"
+    ;;
     esac
     exit 0
 fi
 
-# ========== SINGLE MODE (fallback) ==========
-case $LANGUAGE in
-    "PYTHON")
-        run_with_timeout $TIME_LIMIT_SEC python3 "$CODE_FILE" < "$INPUT_FILE" 2>/dev/null
-        EC=$?
-        ;;
-    "CPP")
-        g++ -std=c++17 -O2 -o program "$CODE_FILE" 2>/dev/null || { echo "COMPILATION_ERROR"; exit 0; }
-        run_with_timeout $TIME_LIMIT_SEC ./program < "$INPUT_FILE" 2>/dev/null
-        EC=$?
-        rm -f program
-        ;;
-    "C")
-        gcc -O2 -o program "$CODE_FILE" 2>/dev/null || { echo "COMPILATION_ERROR"; exit 0; }
-        run_with_timeout $TIME_LIMIT_SEC ./program < "$INPUT_FILE" 2>/dev/null
-        EC=$?
-        rm -f program
-        ;;
-    "JS"|"JAVASCRIPT")
-        run_with_timeout $TIME_LIMIT_SEC node "$CODE_FILE" < "$INPUT_FILE" 2>/dev/null
-        EC=$?
-        ;;
-    *)
-        echo "INTERNAL_ERROR"
-        exit 1
-        ;;
-esac
-
-if [ $EC -eq 0 ]; then
-    echo "SUCCESS"
-elif [ $EC -eq 124 ]; then
-    echo "TIME_LIMIT_EXCEEDED"
-else
-    echo "RUNTIME_ERROR"
-fi
