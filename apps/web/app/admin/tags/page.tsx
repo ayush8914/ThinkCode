@@ -155,8 +155,8 @@ export default function AdminTagsPage() {
           <p className="text-white/50 mt-1">Manage problem tags</p>
         </div>
         <Button onClick={() => handleOpenDialog()} className="bg-violet-600 hover:bg-violet-500 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Tag
+          <Plus className="h-4 w-4 mr-0" />
+          Add New
         </Button>
       </div>
 
@@ -251,37 +251,37 @@ export default function AdminTagsPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="bg-[#0f0f14] border-white/10 text-white">
+        <DialogContent className="bg-mist-200 border-white/10 text-black">
           <DialogHeader>
             <DialogTitle>{editingTag ? 'Edit Tag' : 'Create New Tag'}</DialogTitle>
-            <DialogDescription className="text-white/50">
+            <DialogDescription className="text-black/50">
               {editingTag ? 'Update the tag name' : 'Add a new tag for categorizing problems'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="tagName" className="text-white/70">Tag Name</Label>
+              <Label htmlFor="tagName" className="text-black/70">Tag Name</Label>
               <Input
                 id="tagName"
                 value={tagName}
                 onChange={(e) => setTagName(e.target.value)}
                 placeholder="e.g., Array, Dynamic Programming"
-                className="bg-white/5 border-white/10 text-white"
+                className="bg-white/5 border-white/10 text-black focus:ring-violet-500/30 focus:ring-2"
                 onKeyDown={(e) => e.key === 'Enter' && handleSaveTag()}
                 autoFocus
               />
             </div>
             {tagName && (
               <div className="space-y-1">
-                <Label className="text-white/50 text-xs">Preview</Label>
-                <Badge className="bg-violet-500/20 text-violet-300 border-violet-500/30">
+                <Label className="text-black/50 text-xs">Preview</Label>
+                <Badge className="bg-violet-500/20 text-violet-500 border-violet-500/30">
                   {tagName}
                 </Badge>
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-white/10">
+          <DialogFooter className='bg-mist-200 border-t border-black/40'>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} className="border-black/10 text-black ">
               Cancel
             </Button>
             <Button onClick={handleSaveTag} disabled={saving} className="bg-violet-600 hover:bg-violet-500">
@@ -293,10 +293,10 @@ export default function AdminTagsPage() {
       </Dialog>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="bg-[#0f0f14] border-white/10 text-white">
+        <DialogContent className="bg-mist-200 border-white/10 text-black">
           <DialogHeader>
             <DialogTitle>Delete Tag</DialogTitle>
-            <DialogDescription className="text-white/50">
+            <DialogDescription className="text-black/50">
               Are you sure you want to delete "{tagToDelete?.name}"? 
               {tagToDelete?._count?.problems ? (
                 <span className="block mt-2 text-amber-400">
@@ -305,8 +305,8 @@ export default function AdminTagsPage() {
               ) : null}
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="border-white/10">
+          <DialogFooter className='bg-mist-200  pt-3'>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} className="border-black/10 text-black">
               Cancel
             </Button>
             <Button onClick={handleDeleteTag} className="bg-rose-600 hover:bg-rose-500">
