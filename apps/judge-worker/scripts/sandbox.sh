@@ -1,223 +1,213 @@
 #!/bin/bash
-
 LANGUAGE=$1
 CODE_FILE=$2
 INPUT_FILE=$3
 TIME_LIMIT_MS=$4
 MEMORY_LIMIT_KB=$5
+BATCH_MODE=$6
 
 TIME_LIMIT_SEC=$((TIME_LIMIT_MS / 1000))
-if [ $TIME_LIMIT_SEC -lt 1 ]; then
-    TIME_LIMIT_SEC=1
-fi
+[ $TIME_LIMIT_SEC -lt 1 ] && TIME_LIMIT_SEC=1
 
 WORK_DIR=$(mktemp -d)
 cd "$WORK_DIR"
+trap 'cd /; rm -rf "$WORK_DIR"' EXIT
 
-cleanup() {
-    cd /
-    rm -rf "$WORK_DIR"
+# Portable timeout function (macOS + Linux)
+run_with_timeout() {
+    local timeout_sec=$1
+    shift
+    local cmd="$@"
+    
+    if command -v timeout >/dev/null 2>&1; then
+        timeout ${timeout_sec}s $cmd
+        return $?
+    fi
+    
+    # Fallback for macOS (no GNU timeout)
+    $cmd &
+    local pid=$!
+    local elapsed=0
+    while kill -0 $pid 2>/dev/null && [ $elapsed -lt $timeout_sec ]; do
+        sleep 0.1
+        elapsed=$(echo "$elapsed + 0.1" | bc 2>/dev/null || echo $((elapsed + 1)))
+    done
+    if kill -0 $pid 2>/dev/null; then
+        kill -9 $pid 2>/dev/null
+        return 124
+    fi
+    wait $pid
+    return $?
 }
-trap cleanup EXIT
 
+if [ "$BATCH_MODE" = "--batch" ]; then
+    case $LANGUAGE in
+        "PYTHON")
+            python3 -c "
+import subprocess, sys, tempfile, os
+content = sys.stdin.read()
+# Split and strip each test case to remove surrounding whitespace
+test_cases = [tc.strip() for tc in content.split('\n---TEST_CASE---\n') if tc.strip() != '']
+for inp in test_cases:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.in', delete=False) as f:
+        f.write(inp)
+        temp_in = f.name
+    try:
+        proc = subprocess.Popen(['python3', '$CODE_FILE'], stdin=open(temp_in),
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            stdout, _ = proc.communicate(timeout=$TIME_LIMIT_SEC)
+            print('---OUTPUT---')
+            out = stdout.rstrip('\n')
+            print(out)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            print('---OUTPUT---')
+            print('TIME_LIMIT_EXCEEDED')
+    finally:
+        os.unlink(temp_in)
+" < "$INPUT_FILE"
+            ;;
+            
+        "CPP")
+            g++ -std=c++17 -O2 -o program "$CODE_FILE" 2> compile_error.txt
+            if [ $? -ne 0 ]; then
+                echo "COMPILATION_ERROR"
+                cat compile_error.txt
+                exit 0
+            fi
+            python3 -c "
+import subprocess, sys, tempfile, os
+content = sys.stdin.read()
+test_cases = [tc.strip() for tc in content.split('\n---TEST_CASE---\n') if tc.strip() != '']
+for inp in test_cases:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.in', delete=False) as f:
+        f.write(inp)
+        temp_in = f.name
+    try:
+        proc = subprocess.Popen(['$WORK_DIR/program'], stdin=open(temp_in),
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            stdout, stderr = proc.communicate(timeout=$TIME_LIMIT_SEC)
+            print('---OUTPUT---')
+            out = stdout.rstrip('\n')
+            print(out)
+            if stderr and proc.returncode != 0:
+                print('---STDERR---', file=sys.stderr)
+                print(stderr.rstrip('\n'), file=sys.stderr)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            print('---OUTPUT---')
+            print('TIME_LIMIT_EXCEEDED')
+    finally:
+        os.unlink(temp_in)
+" < "$INPUT_FILE"
+            rm -f program
+            ;;
+            
+        "C")
+            gcc -O2 -o program "$CODE_FILE" 2> compile_error.txt
+            if [ $? -ne 0 ]; then
+                echo "COMPILATION_ERROR"
+                cat compile_error.txt
+                exit 0
+            fi
+            python3 -c "
+import subprocess, sys, tempfile, os
+content = sys.stdin.read()
+test_cases = [tc.strip() for tc in content.split('\n---TEST_CASE---\n') if tc.strip() != '']
+for inp in test_cases:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.in', delete=False) as f:
+        f.write(inp)
+        temp_in = f.name
+    try:
+        proc = subprocess.Popen(['$WORK_DIR/program'], stdin=open(temp_in),
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            stdout, stderr = proc.communicate(timeout=$TIME_LIMIT_SEC)
+            print('---OUTPUT---')
+            out = stdout.strip()
+            print(out)
+            if stderr and proc.returncode != 0:
+                print('---STDERR---', file=sys.stderr)
+                print(stderr.rstrip('\n'), file=sys.stderr)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            print('---OUTPUT---')
+            print('TIME_LIMIT_EXCEEDED')
+    finally:
+        os.unlink(temp_in)
+" < "$INPUT_FILE"
+            rm -f program
+            ;;
+            
+        "JS"|"JAVASCRIPT")
+            python3 -c "
+import subprocess, sys, tempfile, os
+content = sys.stdin.read()
+test_cases = [tc.strip() for tc in content.split('\n---TEST_CASE---\n') if tc.strip() != '']
+for inp in test_cases:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.in', delete=False) as f:
+        f.write(inp)
+        temp_in = f.name
+    try:
+        proc = subprocess.Popen(['node', '$CODE_FILE'], stdin=open(temp_in),
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            stdout, _ = proc.communicate(timeout=$TIME_LIMIT_SEC)
+            print('---OUTPUT---')
+            out = stdout.rstrip('\n')
+            print(out)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            print('---OUTPUT---')
+            print('TIME_LIMIT_EXCEEDED')
+    finally:
+        os.unlink(temp_in)
+" < "$INPUT_FILE"
+            ;;
+            
+        *)
+            echo "INTERNAL_ERROR"
+            echo "Unsupported language: $LANGUAGE"
+            exit 1
+            ;;
+    esac
+    exit 0
+fi
+
+# ========== SINGLE MODE (fallback) ==========
 case $LANGUAGE in
     "PYTHON")
-        python3 "$CODE_FILE" < "$INPUT_FILE" > output.txt 2> error.txt &
-        PID=$!
-        
-        SECONDS=0
-        while kill -0 $PID 2>/dev/null && [ $SECONDS -lt $TIME_LIMIT_SEC ]; do
-            sleep 0.1
-        done
-        
-        if kill -0 $PID 2>/dev/null; then
-            kill -9 $PID 2>/dev/null
-            echo "TIME_LIMIT_EXCEEDED"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            exit 0
-        fi
-        
-        wait $PID
-        EXIT_CODE=$?
-        
-        if [ $EXIT_CODE -eq 0 ]; then
-            echo "SUCCESS"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat output.txt
-        else
-            echo "RUNTIME_ERROR"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat error.txt 2>/dev/null || echo "Exit code: $EXIT_CODE"
-        fi
+        run_with_timeout $TIME_LIMIT_SEC python3 "$CODE_FILE" < "$INPUT_FILE" 2>/dev/null
+        EC=$?
         ;;
-    
     "CPP")
-        g++ -std=c++17 -O2 -Wall -o program "$CODE_FILE" 2> compile_error.txt
-        
-        if [ $? -ne 0 ]; then
-            echo "COMPILATION_ERROR"
-            cat compile_error.txt
-            exit 0
-        fi
-        
-        ./program < "$INPUT_FILE" > output.txt 2> error.txt &
-        PID=$!
-        
-        SECONDS=0
-        while kill -0 $PID 2>/dev/null && [ $SECONDS -lt $TIME_LIMIT_SEC ]; do
-            sleep 0.1
-        done
-        
-        if kill -0 $PID 2>/dev/null; then
-            kill -9 $PID 2>/dev/null
-            echo "TIME_LIMIT_EXCEEDED"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            exit 0
-        fi
-        
-        wait $PID
-        EXIT_CODE=$?
-        
-        if [ $EXIT_CODE -eq 0 ]; then
-            echo "SUCCESS"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat output.txt
-        else
-            echo "RUNTIME_ERROR"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat error.txt 2>/dev/null || echo "Exit code: $EXIT_CODE"
-        fi
+        g++ -std=c++17 -O2 -o program "$CODE_FILE" 2>/dev/null || { echo "COMPILATION_ERROR"; exit 0; }
+        run_with_timeout $TIME_LIMIT_SEC ./program < "$INPUT_FILE" 2>/dev/null
+        EC=$?
+        rm -f program
         ;;
-    
     "C")
-        gcc -O2 -Wall -o program "$CODE_FILE" 2> compile_error.txt
-        
-        if [ $? -ne 0 ]; then
-            echo "COMPILATION_ERROR"
-            cat compile_error.txt
-            exit 0
-        fi
-        
-        ./program < "$INPUT_FILE" > output.txt 2> error.txt &
-        PID=$!
-        
-        SECONDS=0
-        while kill -0 $PID 2>/dev/null && [ $SECONDS -lt $TIME_LIMIT_SEC ]; do
-            sleep 0.1
-        done
-        
-        if kill -0 $PID 2>/dev/null; then
-            kill -9 $PID 2>/dev/null
-            echo "TIME_LIMIT_EXCEEDED"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            exit 0
-        fi
-        
-        wait $PID
-        EXIT_CODE=$?
-        
-        if [ $EXIT_CODE -eq 0 ]; then
-            echo "SUCCESS"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat output.txt
-        else
-            echo "RUNTIME_ERROR"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat error.txt 2>/dev/null || echo "Exit code: $EXIT_CODE"
-        fi
+        gcc -O2 -o program "$CODE_FILE" 2>/dev/null || { echo "COMPILATION_ERROR"; exit 0; }
+        run_with_timeout $TIME_LIMIT_SEC ./program < "$INPUT_FILE" 2>/dev/null
+        EC=$?
+        rm -f program
         ;;
-    
     "JS"|"JAVASCRIPT")
-        node "$CODE_FILE" < "$INPUT_FILE" > output.txt 2> error.txt &
-        PID=$!
-        
-        SECONDS=0
-        while kill -0 $PID 2>/dev/null && [ $SECONDS -lt $TIME_LIMIT_SEC ]; do
-            sleep 0.1
-        done
-        
-        if kill -0 $PID 2>/dev/null; then
-            kill -9 $PID 2>/dev/null
-            echo "TIME_LIMIT_EXCEEDED"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            exit 0
-        fi
-        
-        wait $PID
-        EXIT_CODE=$?
-        
-        if [ $EXIT_CODE -eq 0 ]; then
-            echo "SUCCESS"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat output.txt
-        else
-            echo "RUNTIME_ERROR"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat error.txt 2>/dev/null || echo "Exit code: $EXIT_CODE"
-        fi
+        run_with_timeout $TIME_LIMIT_SEC node "$CODE_FILE" < "$INPUT_FILE" 2>/dev/null
+        EC=$?
         ;;
-    
-    "JAVA")
-        CLASS_NAME=$(grep -o "public class [A-Za-z0-9_]*" "$CODE_FILE" | head -1 | awk '{print $3}')
-        
-        if [ -z "$CLASS_NAME" ]; then
-            CLASS_NAME=$(basename "$CODE_FILE" .java)
-        fi
-        
-        javac "$CODE_FILE" 2> compile_error.txt
-        
-        if [ $? -ne 0 ]; then
-            echo "COMPILATION_ERROR"
-            cat compile_error.txt
-            exit 0
-        fi
-        
-        java "$CLASS_NAME" < "$INPUT_FILE" > output.txt 2> error.txt &
-        PID=$!
-        
-        SECONDS=0
-        while kill -0 $PID 2>/dev/null && [ $SECONDS -lt $TIME_LIMIT_SEC ]; do
-            sleep 0.1
-        done
-        
-        if kill -0 $PID 2>/dev/null; then
-            kill -9 $PID 2>/dev/null
-            echo "TIME_LIMIT_EXCEEDED"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            exit 0
-        fi
-        
-        wait $PID
-        EXIT_CODE=$?
-        
-        if [ $EXIT_CODE -eq 0 ]; then
-            echo "SUCCESS"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat output.txt
-        else
-            echo "RUNTIME_ERROR"
-            echo "TIME:$((SECONDS * 1000))"
-            echo "MEMORY:0"
-            cat error.txt 2>/dev/null || echo "Exit code: $EXIT_CODE"
-        fi
-        ;;
-    
     *)
         echo "INTERNAL_ERROR"
-        echo "Unsupported language: $LANGUAGE"
+        exit 1
         ;;
 esac
+
+if [ $EC -eq 0 ]; then
+    echo "SUCCESS"
+elif [ $EC -eq 124 ]; then
+    echo "TIME_LIMIT_EXCEEDED"
+else
+    echo "RUNTIME_ERROR"
+fi

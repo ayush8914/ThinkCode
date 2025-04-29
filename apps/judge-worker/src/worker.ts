@@ -60,7 +60,7 @@ class JudgeWorker {
         where: { id: task.problemId },
         include: {
           testCases: {
-            where: { isSample: false }, // Run only hidden test cases
+            // where: { isSample: false }, // Run only hidden test cases
             orderBy: { orderIndex: 'asc' },
           },
         },
@@ -130,74 +130,128 @@ class JudgeWorker {
     }
   }
   
-  private async runTestCases(
-    task: JudgeTask,
-    testCases: TestCase[],
-    limits: { timeLimitMs: number; memoryLimitKb: number }
-  ): Promise<{
-    status: Status;
-    executionTimeMs?: number;
-    memoryUsedKb?: number;
-    errorMessage?: string;
-    failedTestCaseIndex?: number;
-  }> {
-    let maxTime = 0;
-    let maxMemory = 0;
+  // private async runTestCases(
+  //   task: JudgeTask,
+  //   testCases: TestCase[],
+  //   limits: { timeLimitMs: number; memoryLimitKb: number }
+  // ): Promise<{
+  //   status: Status;
+  //   executionTimeMs?: number;
+  //   memoryUsedKb?: number;
+  //   errorMessage?: string;
+  //   failedTestCaseIndex?: number;
+  // }> {
+  //   let maxTime = 0;
+  //   let maxMemory = 0;
     
-    for (let i = 0; i < testCases.length; i++) {
-      const testCase = testCases[i] as TestCase;
+  //   for (let i = 0; i < testCases.length; i++) {
+  //     const testCase = testCases[i] as TestCase;
       
-      console.log(`  🔍 [${this.workerId}] Test case ${i + 1}/${testCases.length}`);
+  //     console.log(`  🔍 [${this.workerId}] Test case ${i + 1}/${testCases.length}`);
       
-      const result = await this.executor.execute(
-        task.code,
-        task.language,
-        testCase.input,
-        limits
-      );
+  //     const result = await this.executor.execute(
+  //       task.code,
+  //       task.language,
+  //       testCase.input,
+  //       limits
+  //     );
       
-      if (result.executionTimeMs) {
-        maxTime = Math.max(maxTime, result.executionTimeMs);
-      }
-      if (result.memoryUsedKb) {
-        maxMemory = Math.max(maxMemory, result.memoryUsedKb);
-      }
+  //     if (result.executionTimeMs) {
+  //       maxTime = Math.max(maxTime, result.executionTimeMs);
+  //     }
+  //     if (result.memoryUsedKb) {
+  //       maxMemory = Math.max(maxMemory, result.memoryUsedKb);
+  //     }
       
-      if (result.status !== 'ACCEPTED') {
-        return {
-          status: result.status,
-          executionTimeMs: maxTime,
-          memoryUsedKb: maxMemory,
-          errorMessage: result.errorMessage,
-          failedTestCaseIndex: i,
-        };
-      }
+  //     if (result.status !== 'ACCEPTED') {
+  //       return {
+  //         status: result.status,
+  //         executionTimeMs: maxTime,
+  //         memoryUsedKb: maxMemory,
+  //         errorMessage: result.errorMessage,
+  //         failedTestCaseIndex: i,
+  //       };
+  //     }
       
-      const expectedOutput = testCase.output.trim();
-      const actualOutput = result.output?.trim() || '';
+  //     const expectedOutput = testCase.output.trim();
+  //     const actualOutput = result.output?.trim() || '';
       
-      if (actualOutput !== expectedOutput) {
-        console.log(`  ❌ [${this.workerId}] Wrong answer on test case ${i + 1}`);
-        console.log(`     Expected: ${expectedOutput.substring(0, 100)}`);
-        console.log(`     Got: ${actualOutput.substring(0, 100)}`);
+  //     if (actualOutput !== expectedOutput) {
+  //       console.log(`  ❌ [${this.workerId}] Wrong answer on test case ${i + 1}`);
+  //       console.log(`     Expected: ${expectedOutput.substring(0, 100)}`);
+  //       console.log(`     Got: ${actualOutput.substring(0, 100)}`);
         
-        return {
-          status: 'WRONG_ANSWER',
-          executionTimeMs: maxTime,
-          memoryUsedKb: maxMemory,
-          failedTestCaseIndex: i,
-        };
-      }
+  //       return {
+  //         status: 'WRONG_ANSWER',
+  //         executionTimeMs: maxTime,
+  //         memoryUsedKb: maxMemory,
+  //         failedTestCaseIndex: i,
+  //       };
+  //     }
       
-      console.log(`  ✅ [${this.workerId}] Test case ${i + 1} passed`);
-    }
+  //     console.log(`  ✅ [${this.workerId}] Test case ${i + 1} passed`);
+  //   }
     
-    return {
-      status: 'ACCEPTED',
-      executionTimeMs: maxTime,
-      memoryUsedKb: maxMemory,
-    };
+  //   return {
+  //     status: 'ACCEPTED',
+  //     executionTimeMs: maxTime,
+  //     memoryUsedKb: maxMemory,
+  //   };
+  // }
+
+private async runTestCases(
+  task: JudgeTask,
+  testCases: TestCase[],
+  limits: { timeLimitMs: number; memoryLimitKb: number }
+): Promise<{
+  status: Status;
+  executionTimeMs?: number;
+  memoryUsedKb?: number;
+  errorMessage?: string;
+  failedTestCaseIndex?: number;
+}> {
+  console.log(`🧪 [${this.workerId}] Running ${testCases.length} test cases in BATCH mode`);
+  
+  const batchTestCases = testCases.map(tc => ({
+    input: tc.input,
+    output: tc.output,
+  }));
+  
+  const batchResult = await this.executor.executeBatch(
+    task.code,
+    task.language,
+    batchTestCases,
+    limits
+  );
+  
+  for (let i = 0; i < batchResult.results.length; i++) {
+    const result : any = batchResult.results[i];
+    
+    if (result.status !== 'ACCEPTED') {
+      console.log(`\n❌ [${this.workerId}] Failed at test case ${i + 1}/${testCases.length}: ${result.status}`);
+      console.log(`   Problem: ${task.problemId}`);
+      console.log(`   Input: ${testCases?.[i]?.input}`);
+      console.log(`   Expected: ${testCases?.[i]?.output.trim()}`);
+      console.log(`   Got: ${result.output || '(empty)'}`);
+      
+      return {
+        status: result.status,
+        executionTimeMs: batchResult.totalTimeMs,
+        memoryUsedKb: batchResult.maxMemoryKb,
+        errorMessage: result.errorMessage,
+        failedTestCaseIndex: i,
+      };
+    }
   }
+  
+  console.log(`  ✅ [${this.workerId}] All ${testCases.length} test cases passed`);
+  
+  return {
+    status: 'ACCEPTED',
+    executionTimeMs: batchResult.totalTimeMs,
+    memoryUsedKb: batchResult.maxMemoryKb,
+  };
+}
   
   async start(): Promise<void> {
     console.log(`

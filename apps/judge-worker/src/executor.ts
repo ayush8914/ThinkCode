@@ -219,4 +219,110 @@ export class CodeExecutor {
       }
     }
   }
+
+
+async executeBatch(
+  code: string,
+  language: Language,
+  testCases: Array<{ input: string; output: string }>,
+  limits: { timeLimitMs: number; memoryLimitKb: number }
+): Promise<{
+  results: ExecutionResult[];
+  totalTimeMs: number;
+  maxMemoryKb: number;
+}> {
+  const runId = randomUUID();
+  const extension = this.getExtension(language);
+  const codeFile = path.join(this.workDir, `${runId}.${extension}`);
+  const inputFile = path.join(this.workDir, `${runId}.in`);
+  
+  try {
+    await fs.writeFile(codeFile, code, { mode: 0o644 });
+    
+    const combinedInput = testCases.map(tc => tc.input).join('\n---TEST_CASE---\n');
+    await fs.writeFile(inputFile, combinedInput, { mode: 0o644 });
+    
+    console.log(`Executing BATCH: ${language} with ${testCases.length} test cases`);
+    console.log(`First test case input: ${testCases[0]?.input}`);
+    console.log(`First test case expected: ${testCases[0]?.output}`);
+    
+    const startTime = Date.now();
+    
+    const { stdout, stderr } = await execFileAsync(
+      this.sandboxPath,
+      [
+        language,
+        codeFile,
+        inputFile,
+        limits.timeLimitMs.toString(),
+        limits.memoryLimitKb.toString(),
+        '--batch'
+      ],
+      {
+        timeout: (limits.timeLimitMs * testCases.length) + 10000,
+        maxBuffer: 50 * 1024 * 1024,
+        env: { ...process.env, PATH: '/usr/local/bin:/usr/bin:/bin' },
+      }
+    );
+    
+    const totalTimeMs = Date.now() - startTime;
+    
+    // Log raw output for debugging
+    console.log('=== RAW BATCH OUTPUT ===');
+    console.log(stdout.substring(0, 1000));
+    console.log('=== END RAW OUTPUT ===');
+    
+    if (stderr) {
+      console.log('=== RAW BATCH STDERR ===');
+      console.log(stderr.substring(0, 500));
+    }
+    
+    const outputs = stdout.split('---OUTPUT---\n').filter(o => o.trim());
+    console.log(`Parsed ${outputs.length} outputs from batch execution`);
+    
+    const results: ExecutionResult[] = [];
+    
+    for (let i = 0; i < testCases.length; i++) {
+      const gotOutput = outputs[i]?.trim() || '';
+      const expectedOutput = testCases?.[i]?.output.trim();
+      
+      // Log first few test cases for debugging
+      if (i < 3) {
+        console.log(`\n📋 Test Case ${i + 1}:`);
+        console.log(`   Input: ${testCases?.[i]?.input.substring(0, 100)}`);
+        console.log(`   Expected: ${expectedOutput}`);
+        console.log(`   Got: ${gotOutput}`);
+      }
+      
+      if (gotOutput === 'TIME_LIMIT_EXCEEDED') {
+        results.push({ status: 'TIME_LIMIT_EXCEEDED' });
+      } else if (gotOutput === expectedOutput) {
+        results.push({
+          status: 'ACCEPTED',
+          output: gotOutput,
+          executionTimeMs: Math.floor(totalTimeMs / testCases.length),
+          memoryUsedKb: 0,
+        });
+      } else {
+        // Log the failing test case
+        console.log(`\n❌ FAILED Test Case ${i + 1}:`);
+        console.log(`   Input: ${testCases?.[i]?.input}`);
+        console.log(`   Expected: ${expectedOutput}`);
+        console.log(`   Got: ${gotOutput}`);
+        
+        results.push({
+          status: 'WRONG_ANSWER',
+          output: gotOutput,
+          executionTimeMs: Math.floor(totalTimeMs / testCases.length),
+          memoryUsedKb: 0,
+        });
+      }
+    }
+    
+    return { results, totalTimeMs, maxMemoryKb: 0 };
+    
+  } finally {
+    await this.cleanup([codeFile, inputFile]);
+  }
+}
 }
