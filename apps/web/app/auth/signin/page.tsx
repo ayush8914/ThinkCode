@@ -3,7 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Code2, AlertCircle, Mail, Loader2 } from 'lucide-react';
+import { AlertCircle, Mail, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 const GithubIcon = () => (
@@ -32,37 +32,60 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setError('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-  try {
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
 
-    if (result?.error) {
-      setError(result.error);
-      setLoading(false);
-    } else if (result?.ok) {
-      router.push(callbackUrl);
-      router.refresh();
-    } else {
-      setError('Sign in failed');
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+      } else if (result?.ok) {
+        // Wait a bit for session to be established
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Fetch session to get user role
+        const sessionRes = await fetch('/api/auth/session');
+        const sessionData = await sessionRes.json();
+        
+        // Redirect based on role
+        if (sessionData?.user?.role === 'ADMIN') {
+          window.location.href = '/admin';
+        } else if (callbackUrl && callbackUrl !== '/') {
+          window.location.href = callbackUrl;
+        } else {
+          window.location.href = '/problems';
+        }
+      } else {
+        setError('Sign in failed');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
       setLoading(false);
     }
-  } catch (err) {
-    setError('An unexpected error occurred');
-    setLoading(false);
-  }
-};
+  };
 
   const handleOAuthSignIn = (provider: string) => {
     setLoading(true);
     signIn(provider, { callbackUrl });
+  };
+
+  const fillTestAccount = () => {
+    setEmail('test@thinkcode.com');
+    setPassword('test123');
+  };
+
+  const fillAdminAccount = () => {
+    setEmail('admin@thinkcode.com');
+    setPassword('admin123');
   };
 
   return (
@@ -301,18 +324,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
             </form>
 
-            {/* Test Account */}
-            <div className="mt-6 px-4 py-3 rounded-xl relative overflow-hidden"
-              style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)' }}>
-              <div className="absolute top-0 left-0 right-0 h-[1px]"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.4), transparent)' }} />
-              <p className="text-[10px] tracking-widest uppercase mb-2"
-                style={{ color: '#a78bfa' }}>⚡ Test Account</p>
-              <div className="space-y-0.5 text-xs font-mono">
-                <p className="text-white/40">Email: <span className="text-white/70">test@thinkcode.com</span></p>
-                <p className="text-white/40">Pass: <span className="text-white/70">test123</span></p>
-              </div>
-            </div>
+   
           </div>
         </div>
 

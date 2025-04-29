@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useCallback, useTransition } from 'react';
-import { Circle, ArrowLeft, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Circle, ArrowLeft, Loader2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { useSession } from 'next-auth/react';
 
 const difficultyColors = {
   EASY: 'text-emerald-400',
@@ -16,7 +18,7 @@ interface Problem {
   title: string;
   slug: string;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
-  tags: { tag: { id: string; name: string } }[];
+  tags: { id: string; name: string }[];
   _count: { submissions: number };
   userStatus?: 'SOLVED' | 'ATTEMPTED' | 'NONE';
 }
@@ -26,35 +28,34 @@ interface Tag {
   name: string;
 }
 
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 8;
 
 export default function ProblemsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const { data: session } = useSession();
 
-  // State
+
   const [problems, setProblems] = useState<Problem[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProblems, setTotalProblems] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFiltering, setIsFiltering] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
 
-  // Filters from URL
   const currentPage = parseInt(searchParams.get('page') || '1');
   const selectedDifficulty = searchParams.get('difficulty') || '';
   const selectedTag = searchParams.get('tag') || '';
+  const search = searchParams.get('search') || '';
 
-  // Fetch tags on mount
   useEffect(() => {
     fetchTags();
   }, []);
 
-  // Fetch problems when filters change
   useEffect(() => {
     fetchProblems();
-  }, [currentPage, selectedDifficulty, selectedTag]);
+  }, [currentPage, selectedDifficulty, selectedTag, search]);
 
   const fetchTags = async () => {
     try {
@@ -69,27 +70,50 @@ export default function ProblemsPage() {
   };
 
   const fetchProblems = async () => {
-    setIsFiltering(true);
+    setIsLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set('page', currentPage.toString());
-      params.set('limit', PAGE_SIZE.toString());
+      if (search) params.set('search', search);
       if (selectedDifficulty) params.set('difficulty', selectedDifficulty);
       if (selectedTag) params.set('tag', selectedTag);
-
+      params.set('limit', PAGE_SIZE.toString());
+      params.set('offset', ((currentPage - 1) * PAGE_SIZE).toString());
+      
       const response = await fetch(`/api/problems?${params.toString()}`);
-      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const text = await response.text();
+      
+      if (!text) {
+        console.error('Empty response from API');
+        setProblems([]);
+        setTotalProblems(0);
+        setTotalPages(1);
+        return;
+      }
+      
+      const data = JSON.parse(text);
       
       if (data.success) {
-        setProblems(data.problems);
-        setTotalPages(data.totalPages);
-        setTotalProblems(data.total);
+        setProblems(data.problems || []);
+        setTotalProblems(data.total || 0);
+        setTotalPages(Math.ceil((data.total || 0) / PAGE_SIZE));
+      } else {
+        console.error('API error:', data.error);
+        setProblems([]);
+        setTotalProblems(0);
+        setTotalPages(1);
       }
     } catch (error) {
       console.error('Failed to fetch problems:', error);
+      setProblems([]);
+      setTotalProblems(0);
+      setTotalPages(1);
     } finally {
       setIsLoading(false);
-      setIsFiltering(false);
     }
   };
 
@@ -104,8 +128,7 @@ export default function ProblemsPage() {
       }
     });
     
-    // Reset to page 1 when filters change
-    if (updates.difficulty !== undefined || updates.tag !== undefined) {
+    if (updates.difficulty !== undefined || updates.tag !== undefined || updates.search !== undefined) {
       params.set('page', '1');
     }
     
@@ -122,6 +145,14 @@ export default function ProblemsPage() {
     updateFilters({ tag: tag || null });
   };
 
+  const handleSearch = (value: string) => {
+    setSearchQuery(value);
+    const timeoutId = setTimeout(() => {
+      updateFilters({ search: value || null });
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  };
+
   const handlePageChange = (page: number) => {
     updateFilters({ page: page.toString() });
   };
@@ -136,17 +167,16 @@ export default function ProblemsPage() {
     return <Circle className="h-4 w-4 text-white/20 group-hover:text-violet-400/50 transition-colors" />;
   };
 
-  // Loading skeleton
-  if (isLoading) {
+  if (isLoading && problems.length === 0) {
     return (
-      <main className="min-h-screen bg-[#06060e] text-white font-mono relative overflow-hidden">
+      <main className="min-h-screen bg-[#0a0a0f] text-white font-mono relative overflow-hidden">
         <div aria-hidden className="pointer-events-none absolute inset-0">
           <div 
             className="absolute inset-0"
             style={{
               backgroundImage: `
-                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
               `,
               backgroundSize: '48px 48px',
             }}
@@ -163,14 +193,14 @@ export default function ProblemsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#06060e] text-white font-mono relative overflow-hidden">
+    <main className="min-h-screen bg-[#0a0a0f] text-white font-mono relative overflow-hidden">
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div 
           className="absolute inset-0"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)
+              linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
             `,
             backgroundSize: '48px 48px',
           }}
@@ -178,16 +208,14 @@ export default function ProblemsPage() {
       </div>
 
       <div className="relative z-10 px-6 md:px-12 py-12 max-w-6xl mx-auto">
-        {/* Back button */}
         <Link
-          href="/"
+          href={session?.user?.role === 'ADMIN' ? '/admin' : '/'}
           className="inline-flex items-center gap-2 px-3 py-1.5 mb-6 rounded-md text-sm text-white/50 hover:text-white/80 hover:bg-white/5 transition-all duration-200 border border-transparent hover:border-white/10"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Home</span>
         </Link>
 
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight mb-2">Problems</h1>
           <p className="text-white/40 font-sans">
@@ -195,13 +223,26 @@ export default function ProblemsPage() {
           </p>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-3 mb-6">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
+            <Input
+              type="text"
+              placeholder="Search problems..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                handleSearch(e.target.value);
+              }}
+              className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/30"
+            />
+          </div>
+
+          <div className="flex gap-2">
             <select
               value={selectedDifficulty}
               onChange={(e) => handleDifficultyChange(e.target.value)}
-              disabled={isFiltering}
+              disabled={isPending}
               className="px-4 py-2 rounded-md text-sm bg-white/5 border border-white/10 text-white/70 font-mono cursor-pointer hover:bg-white/10 transition-colors appearance-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">All Difficulties</option>
@@ -209,16 +250,11 @@ export default function ProblemsPage() {
               <option value="MEDIUM">Medium</option>
               <option value="HARD">Hard</option>
             </select>
-            {isFiltering && (
-              <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-violet-400" />
-            )}
-          </div>
 
-          <div className="relative">
             <select
               value={selectedTag}
               onChange={(e) => handleTagChange(e.target.value)}
-              disabled={isFiltering}
+              disabled={isPending}
               className="px-4 py-2 rounded-md text-sm bg-white/5 border border-white/10 text-white/70 font-mono cursor-pointer hover:bg-white/10 transition-colors appearance-none pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">All Tags</option>
@@ -228,25 +264,23 @@ export default function ProblemsPage() {
                 </option>
               ))}
             </select>
-            {isFiltering && (
-              <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-violet-400" />
+
+            {(selectedDifficulty || selectedTag || search) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  handleDifficultyChange('');
+                  handleTagChange('');
+                  updateFilters({ difficulty: null, tag: null, search: null });
+                }}
+                className="px-3 py-1.5 text-xs text-white/50 hover:text-white/70 transition-colors"
+              >
+                Clear
+              </button>
             )}
           </div>
-
-          {(selectedDifficulty || selectedTag) && (
-            <button
-              onClick={() => {
-                handleDifficultyChange('');
-                handleTagChange('');
-              }}
-              className="px-3 py-1.5 text-xs text-white/50 hover:text-white/70 transition-colors"
-            >
-              Clear Filters
-            </button>
-          )}
         </div>
 
-        {/* Problems Table */}
         <div className="rounded-lg border border-white/10 overflow-hidden">
           <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-white/[0.02] border-b border-white/10 text-xs text-white/40 uppercase tracking-wider">
             <div className="col-span-1">Status</div>
@@ -257,7 +291,7 @@ export default function ProblemsPage() {
           </div>
 
           <div className="divide-y divide-white/5 relative">
-            {isFiltering && problems.length > 0 && (
+            {isPending && problems.length > 0 && (
               <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10">
                 <Loader2 className="h-6 w-6 animate-spin text-violet-400" />
               </div>
@@ -286,7 +320,7 @@ export default function ProblemsPage() {
                 </div>
 
                 <div className="col-span-2 flex items-center gap-1 flex-wrap">
-                  {problem.tags.slice(0, 2).map(({ tag }) => (
+                  {problem.tags.slice(0, 2).map((tag) => (
                     <span 
                       key={tag.id}
                       className="px-2 py-0.5 text-[10px] rounded bg-white/5 text-white/50 group-hover:bg-violet-500/10 group-hover:text-violet-400 transition-colors"
@@ -309,7 +343,6 @@ export default function ProblemsPage() {
           </div>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-6">
             <div className="text-sm text-white/40">
@@ -319,7 +352,7 @@ export default function ProblemsPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1 || isFiltering}
+                disabled={currentPage === 1 || isPending}
                 className="p-2 rounded-md border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -342,7 +375,7 @@ export default function ProblemsPage() {
                     <button
                       key={pageNum}
                       onClick={() => handlePageChange(pageNum)}
-                      disabled={isFiltering}
+                      disabled={isPending}
                       className={`h-8 w-8 rounded-md text-sm font-mono transition-colors ${
                         pageNum === currentPage
                           ? 'bg-violet-600 text-white'
@@ -357,7 +390,7 @@ export default function ProblemsPage() {
               
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages || isFiltering}
+                disabled={currentPage === totalPages || isPending}
                 className="p-2 rounded-md border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="h-4 w-4" />
@@ -366,15 +399,20 @@ export default function ProblemsPage() {
           </div>
         )}
 
-        {problems.length === 0 && !isFiltering && (
+        {problems.length === 0 && !isPending && (
           <div className="text-center py-20">
-            <p className="text-white/40 font-mono">No problems available yet.</p>
-            <Link 
-              href="/"
-              className="inline-block mt-4 text-violet-400 hover:text-violet-300 transition-colors"
-            >
-              Return to Home
-            </Link>
+            <p className="text-white/40 font-mono">No problems found.</p>
+            {(selectedDifficulty || selectedTag || search) && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  updateFilters({ difficulty: null, tag: null, search: null });
+                }}
+                className="inline-block mt-4 text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -138,3 +138,83 @@
     }
   }
 }
+
+
+
+/* Markdown Editor Styles */
+.w-md-editor {
+  --md-editor-background: transparent !important;
+  --md-editor-border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.25rem !important;
+}
+
+.w-md-editor-toolbar {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.w-md-editor-toolbar ul li button {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.w-md-editor-toolbar ul li button:hover {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.w-md-editor-text-pre > code,
+.w-md-editor-text-pre {
+  background: transparent !important;
+}
+
+.w-md-editor-preview {
+  background: rgba(255, 255, 255, 0.02) !important;
+  box-shadow: none !important;
+}
+
+.wmde-markdown {
+  background: transparent !important;
+  color: white !important;
+}
+
+.wmde-markdown h1,
+.wmde-markdown h2,
+.wmde-markdown h3,
+.wmde-markdown h4,
+.wmde-markdown h5,
+.wmde-markdown h6 {
+  color: white !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.wmde-markdown code {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #a78bfa !important;
+}
+
+.wmde-markdown pre {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.wmde-markdown pre code {
+  background: transparent !important;
+}
+
+.wmde-markdown blockquote {
+  border-left-color: #8b5cf6 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.wmde-markdown a {
+  color: #8b5cf6 !important;
+}
+
+.wmde-markdown table {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.wmde-markdown th,
+.wmde-markdown td {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
