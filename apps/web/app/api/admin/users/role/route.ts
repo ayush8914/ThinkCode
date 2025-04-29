@@ -14,13 +14,11 @@ export async function PUT(request: NextRequest) {
   try {
     const { userId, role } = await request.json();
     
-    // Validate role
-    const validRoles = ['USER', 'PROBLEM_SETTER', 'ADMIN'];
+    const validRoles = ['USER', 'PROBLEM_SETTER'];
     if (!validRoles.includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
     
-    // Don't allow changing own role (prevent accidental lockout)
     if (userId === session.user.id) {
       return NextResponse.json({ error: 'Cannot change your own role' }, { status: 400 });
     }

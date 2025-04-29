@@ -19,7 +19,6 @@ const roleColors: Record<string, string> = {
 };
 
 const roleLabels: Record<string, string> = {
-  ADMIN: 'Admin',
   PROBLEM_SETTER: 'Problem Setter',
   USER: 'User',
 };
@@ -88,9 +87,6 @@ export default function UserRoleSelect({ userId, currentRole, onRoleChange }: Us
         </SelectItem>
         <SelectItem value="PROBLEM_SETTER" className="text-white/80 hover:bg-white/10 focus:bg-white/10">
           <Badge className={`${roleColors.PROBLEM_SETTER} text-xs`}>Problem Setter</Badge>
-        </SelectItem>
-        <SelectItem value="ADMIN" className="text-white/80 hover:bg-white/10 focus:bg-white/10">
-          <Badge className={`${roleColors.ADMIN} text-xs`}>Admin</Badge>
         </SelectItem>
       </SelectContent>
     </Select>

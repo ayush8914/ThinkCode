@@ -4,6 +4,7 @@ import { prisma } from '@repo/db';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    const slug = searchParams.get('slug');
     const difficulty = searchParams.get('difficulty') || undefined;
     const search = searchParams.get('search') || undefined;
     const tags = searchParams.get('tags') || undefined;
@@ -14,6 +15,36 @@ export async function GET(request: NextRequest) {
       isPublic: true,
     };
     
+    // If slug is provided, return single problem
+    if (slug) {
+      const problem = await prisma.problem.findUnique({
+        where: { slug },
+        include: {
+          tags: {
+            include: { tag: true },
+          },
+          testCases: {
+            where: { isSample: true },
+            orderBy: { orderIndex: 'asc' },
+          },
+        },
+      });
+      
+      if (!problem) {
+        return NextResponse.json(
+          { success: false, error: 'Problem not found' },
+          { status: 404 }
+        );
+      }
+      
+      return NextResponse.json({ 
+        success: true, 
+        problems: [problem],
+        total: 1,
+      });
+    }
+    
+    // Regular filters for list view
     if (difficulty) {
       where.difficulty = difficulty;
     }
@@ -48,17 +79,12 @@ export async function GET(request: NextRequest) {
           tags: {
             select: {
               tag: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+                select: { id: true, name: true },
               },
             },
           },
           _count: {
-            select: {
-              submissions: true,
-            },
+            select: { submissions: true },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -84,14 +110,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Failed to fetch problems:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to fetch problems',
-        problems: [],
-        total: 0,
-        limit: 50,
-        offset: 0,
-      },
+      { success: false, error: 'Failed to fetch problems' },
       { status: 500 }
     );
   }

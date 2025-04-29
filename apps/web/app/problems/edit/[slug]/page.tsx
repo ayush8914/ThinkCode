@@ -35,6 +35,7 @@ import {
   Copy,
 } from 'lucide-react';
 import Link from 'next/link';
+import { use } from 'react';
 
 const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
 
@@ -43,7 +44,8 @@ interface TestCase {
   input: string;
   output: string;
   isSample: boolean;
-  explanation?: string;
+  explanation?: string | null;
+  orderIndex?: number;
 }
 
 interface Tag {
@@ -51,18 +53,43 @@ interface Tag {
   name: string;
 }
 
-export default function CreateProblemPage() {
+interface ProblemData {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  timeLimitMs: number;
+  memoryLimitKb: number;
+  isPublic: boolean;
+  tags: { tag: Tag }[];
+  testCases: TestCase[];
+}
+
+interface FormData {
+  title: string;
+  slug: string;
+  difficulty: string;
+  timeLimitMs: number;
+  memoryLimitKb: number;
+  isPublic: boolean;
+}
+
+export default function EditProblemPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
   const { data: session } = useSession();
   const router = useRouter();
   
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('write');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [pageLoading, setPageLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<string>('write');
+  const [error, setError] = useState<string>('');
+  const [success, setSuccess] = useState<string>('');
   const [availableTags, setAvailableTags] = useState<Tag[]>([]);
-  const [tagsLoading, setTagsLoading] = useState(true);
+  const [tagsLoading, setTagsLoading] = useState<boolean>(true);
+  const [problemId, setProblemId] = useState<string>('');
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: '',
     slug: '',
     difficulty: 'EASY',
@@ -71,46 +98,17 @@ export default function CreateProblemPage() {
     isPublic: true,
   });
   
-  const [description, setDescription] = useState(`# Problem Title
-
-## Description
-Describe your problem here...
-
-## Input Format
-Describe the input format...
-
-## Output Format
-Describe the output format...
-
-## Constraints
-- List constraints here...
-
-## Example
-
-### Input
-\`\`\`
-2 7 11 15
-9
-\`\`\`
-
-### Output
-\`\`\`
-0 1
-\`\`\`
-
-### Explanation
-2 + 7 = 9, so return indices 0 and 1.
-`);
-  
+  const [description, setDescription] = useState<string>('');
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [selectedTagId, setSelectedTagId] = useState<string>('');
   
   useEffect(() => {
     fetchTags();
-  }, []);
+    fetchProblem();
+  }, [slug]);
   
-  const fetchTags = async () => {
+  const fetchTags = async (): Promise<void> => {
     try {
       const res = await fetch('/api/tags');
       const data = await res.json();
@@ -124,7 +122,38 @@ Describe the output format...
     }
   };
   
-  const generateSlug = (title: string) => {
+ const fetchProblem = async (): Promise<void> => {
+  try {
+    const res = await fetch(`/api/problems?slug=${slug}`);
+    const data = await res.json();
+    
+    if (data.success && data.problems?.length > 0) {
+      const problem = data.problems[0];
+      setProblemId(problem.id);
+      setFormData({
+        title: problem.title,
+        slug: problem.slug,
+        difficulty: problem.difficulty,
+        timeLimitMs: problem.timeLimitMs || 1000,
+        memoryLimitKb: problem.memoryLimitKb || 262144,
+        isPublic: problem.isPublic ?? true,
+      });
+      setDescription(problem.description || '');
+      setSelectedTags(problem.tags || []);
+      
+      // Use test cases from the main API response (already included)
+      setTestCases(problem.testCases || []);
+    } else {
+      setError('Failed to load problem');
+    }
+  } catch (error) {
+    console.error('Failed to fetch problem:', error);
+    setError('Failed to load problem');
+  } finally {
+    setPageLoading(false);
+  }
+};
+  const generateSlug = (title: string): string => {
     return title
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
@@ -132,7 +161,7 @@ Describe the output format...
       .replace(/-+/g, '-');
   };
   
-  const handleTitleChange = (value: string) => {
+  const handleTitleChange = (value: string): void => {
     setFormData({
       ...formData,
       title: value,
@@ -140,21 +169,21 @@ Describe the output format...
     });
   };
   
-  const addTag = () => {
+  const addTag = (): void => {
     if (selectedTagId) {
-      const tag = availableTags.find(t => t.id === selectedTagId);
-      if (tag && !selectedTags.some(t => t.id === tag.id)) {
+      const tag = availableTags.find((t: Tag) => t.id === selectedTagId);
+      if (tag && !selectedTags.some((t: Tag) => t.id === tag.id)) {
         setSelectedTags([...selectedTags, tag]);
       }
       setSelectedTagId('');
     }
   };
   
-  const removeTag = (tagId: string) => {
-    setSelectedTags(selectedTags.filter(t => t.id !== tagId));
+  const removeTag = (tagId: string): void => {
+    setSelectedTags(selectedTags.filter((t: Tag) => t.id !== tagId));
   };
   
-  const addTestCase = () => {
+  const addTestCase = (): void => {
     const newTestCase: TestCase = {
       id: `temp-${Date.now()}`,
       input: '',
@@ -165,17 +194,17 @@ Describe the output format...
     setTestCases([...testCases, newTestCase]);
   };
   
-  const updateTestCase = (id: string, field: keyof TestCase, value: string | boolean) => {
-    setTestCases(testCases.map(tc => 
+  const updateTestCase = (id: string, field: keyof TestCase, value: string | boolean): void => {
+    setTestCases(testCases.map((tc: TestCase) => 
       tc.id === id ? { ...tc, [field]: value } : tc
     ));
   };
   
-  const removeTestCase = (id: string) => {
-    setTestCases(testCases.filter(tc => tc.id !== id));
+  const removeTestCase = (id: string): void => {
+    setTestCases(testCases.filter((tc: TestCase) => tc.id !== id));
   };
   
-  const duplicateTestCase = (tc: TestCase) => {
+  const duplicateTestCase = (tc: TestCase): void => {
     const newTestCase: TestCase = {
       ...tc,
       id: `temp-${Date.now()}`,
@@ -183,7 +212,7 @@ Describe the output format...
     setTestCases([...testCases, newTestCase]);
   };
   
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -207,7 +236,7 @@ Describe the output format...
       return;
     }
     
-    const hasSample = testCases.some(tc => tc.isSample);
+    const hasSample = testCases.some((tc: TestCase) => tc.isSample);
     if (!hasSample) {
       setError('At least one sample test case is required');
       setLoading(false);
@@ -215,29 +244,32 @@ Describe the output format...
     }
     
     try {
-      const res = await fetch('/api/problems', {
-        method: 'POST',
+      const res = await fetch(`/api/problems/${problemId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           description,
-          testCases: testCases.map(({ id, ...tc }) => tc),
-          tags: selectedTags.map(t => t.id),
+          testCases: testCases.map(({ id, orderIndex, ...tc }: TestCase) => ({
+            ...tc,
+            id: id.startsWith('temp-') ? undefined : id,
+          })),
+          tags: selectedTags.map((t: Tag) => t.id),
         }),
       });
       
       const data = await res.json();
       
       if (data.success) {
-        setSuccess('Problem created successfully!');
+        setSuccess('Problem updated successfully!');
         setTimeout(() => {
           router.push(`/problems/${data.slug}`);
         }, 1500);
       } else {
-        setError(data.error || 'Failed to create problem');
+        setError(data.error || 'Failed to update problem');
       }
     } catch (error) {
-      setError('Failed to create problem');
+      setError('Failed to update problem');
     } finally {
       setLoading(false);
     }
@@ -249,10 +281,20 @@ Describe the output format...
         <div className="relative z-10 container mx-auto px-4 py-16 text-center">
           <AlertCircle className="h-16 w-16 text-rose-400 mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-4 text-white">Access Denied</h1>
-          <p className="text-white/50 mb-8">You don't have permission to create problems.</p>
+          <p className="text-white/50 mb-8">You don&apos;t have permission to edit problems.</p>
           <Link href="/" className="text-violet-400 hover:text-violet-300">
             Return to Home →
           </Link>
+        </div>
+      </main>
+    );
+  }
+  
+  if (pageLoading) {
+    return (
+      <main className="relative min-h-screen bg-[#0a0a0f] text-white font-mono">
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
         </div>
       </main>
     );
@@ -280,9 +322,9 @@ Describe the output format...
           </Link>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
-              Create <span className="text-violet-400">Problem</span>
+              Edit <span className="text-violet-400">Problem</span>
             </h1>
-            <p className="text-white/50 text-sm mt-1">Add a new coding challenge to the platform</p>
+            <p className="text-white/50 text-sm mt-1">Update coding challenge: {formData.title}</p>
           </div>
         </div>
         
@@ -316,7 +358,7 @@ Describe the output format...
                     <Input
                       id="title"
                       value={formData.title}
-                      onChange={e => handleTitleChange(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleTitleChange(e.target.value)}
                       className="bg-white/5 border-white/10 mt-1 text-white placeholder:text-white/30"
                       placeholder="e.g., Two Sum"
                       required
@@ -328,7 +370,7 @@ Describe the output format...
                     <Input
                       id="slug"
                       value={formData.slug}
-                      onChange={e => setFormData({ ...formData, slug: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, slug: e.target.value })}
                       className="bg-white/5 border-white/10 mt-1 font-mono text-sm text-white placeholder:text-white/30"
                       placeholder="two-sum"
                       required
@@ -340,7 +382,7 @@ Describe the output format...
                     <select
                       id="difficulty"
                       value={formData.difficulty}
-                      onChange={e => setFormData({ ...formData, difficulty: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, difficulty: e.target.value })}
                       className="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-sm text-white text-sm"
                     >
                       <option value="EASY" className="bg-[#0a0a0f] text-white">Easy</option>
@@ -356,7 +398,7 @@ Describe the output format...
                         id="timeLimit"
                         type="number"
                         value={formData.timeLimitMs}
-                        onChange={e => setFormData({ ...formData, timeLimitMs: parseInt(e.target.value) || 1000 })}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, timeLimitMs: parseInt(e.target.value) || 1000 })}
                         className="bg-white/5 border-white/10 mt-1 text-white"
                       />
                     </div>
@@ -366,7 +408,7 @@ Describe the output format...
                         id="memoryLimit"
                         type="number"
                         value={formData.memoryLimitKb}
-                        onChange={e => setFormData({ ...formData, memoryLimitKb: parseInt(e.target.value) || 262144 })}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, memoryLimitKb: parseInt(e.target.value) || 262144 })}
                         className="bg-white/5 border-white/10 mt-1 text-white"
                       />
                     </div>
@@ -377,10 +419,10 @@ Describe the output format...
                       type="checkbox"
                       id="isPublic"
                       checked={formData.isPublic}
-                      onChange={e => setFormData({ ...formData, isPublic: e.target.checked })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, isPublic: e.target.checked })}
                       className="rounded-sm accent-violet-500"
                     />
-                    <Label htmlFor="isPublic" className="text-white/70 text-xs">Publish immediately</Label>
+                    <Label htmlFor="isPublic" className="text-white/70 text-xs">Published</Label>
                   </div>
                 </CardContent>
               </Card>
@@ -399,7 +441,7 @@ Describe the output format...
                         <SelectValue placeholder={tagsLoading ? "Loading tags..." : "Select a tag"} />
                       </SelectTrigger>
                       <SelectContent className="bg-[#0f0f14] border-white/10 text-white">
-                        {availableTags.map((tag) => (
+                        {availableTags.map((tag: Tag) => (
                           <SelectItem 
                             key={tag.id} 
                             value={tag.id}
@@ -422,7 +464,7 @@ Describe the output format...
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {selectedTags.map(tag => (
+                    {selectedTags.map((tag: Tag) => (
                       <Badge
                         key={tag.id}
                         className="bg-violet-500/20 text-violet-200 border-violet-500/30 text-xs"
@@ -470,7 +512,7 @@ Describe the output format...
                     <div data-color-mode="dark">
                       <MDEditor
                         value={description}
-                        onChange={(val) => setDescription(val || '')}
+                        onChange={(val: string | undefined) => setDescription(val || '')}
                         preview="edit"
                         height={400}
                         visibleDragbar={false}
@@ -483,55 +525,7 @@ Describe the output format...
                   ) : (
                     <div className="min-h-[400px] max-h-[500px] overflow-y-auto p-4 border border-white/10 rounded-sm bg-[#0f0f14]">
                       <div className="prose prose-invert prose-sm max-w-none">
-                        <ReactMarkdown 
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            h1: ({ children }) => <h1 className="text-white text-2xl font-bold mb-4">{children}</h1>,
-                            h2: ({ children }) => <h2 className="text-white text-xl font-semibold mb-3 mt-6">{children}</h2>,
-                            h3: ({ children }) => <h3 className="text-white text-lg font-medium mb-2 mt-4">{children}</h3>,
-                            p: ({ children }) => <p className="text-white/80 mb-4">{children}</p>,
-                            code: ({ children, className }) => (
-                              <code className={`${className || ''} bg-violet-500/10 text-violet-300 rounded px-1.5 py-0.5`}>
-                                {children}
-                              </code>
-                            ),
-                            pre: ({ children }) => (
-                              <pre className="bg-black/30 border border-white/10 rounded-sm p-4 overflow-x-auto my-4">
-                                {children}
-                              </pre>
-                            ),
-                            ul: ({ children }) => <ul className="list-disc list-inside text-white/80 mb-4">{children}</ul>,
-                            ol: ({ children }) => <ol className="list-decimal list-inside text-white/80 mb-4">{children}</ol>,
-                            li: ({ children }) => <li className="mb-1">{children}</li>,
-                            blockquote: ({ children }) => (
-                              <blockquote className="border-l-4 border-violet-500 pl-4 italic text-white/60 my-4">
-                                {children}
-                              </blockquote>
-                            ),
-                            a: ({ href, children }) => (
-                              <a href={href} className="text-violet-400 hover:text-violet-300 underline">
-                                {children}
-                              </a>
-                            ),
-                            table: ({ children }) => (
-                              <div className="overflow-x-auto my-4">
-                                <table className="min-w-full border-collapse border border-white/10">
-                                  {children}
-                                </table>
-                              </div>
-                            ),
-                            th: ({ children }) => (
-                              <th className="border border-white/10 px-4 py-2 bg-white/5 text-white font-semibold">
-                                {children}
-                              </th>
-                            ),
-                            td: ({ children }) => (
-                              <td className="border border-white/10 px-4 py-2 text-white/80">
-                                {children}
-                              </td>
-                            ),
-                          }}
-                        >
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {description}
                         </ReactMarkdown>
                       </div>
@@ -578,7 +572,7 @@ Describe the output format...
                       </Button>
                     </div>
                   ) : (
-                    testCases.map((tc, index) => (
+                    testCases.map((tc: TestCase, index: number) => (
                       <div
                         key={tc.id}
                         className={`p-3 border rounded-sm ${
@@ -596,7 +590,7 @@ Describe the output format...
                               <input
                                 type="checkbox"
                                 checked={tc.isSample}
-                                onChange={e => updateTestCase(tc.id, 'isSample', e.target.checked)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateTestCase(tc.id, 'isSample', e.target.checked)}
                                 className="rounded-sm accent-emerald-500"
                               />
                               <span className="text-xs text-emerald-400">Sample</span>
@@ -627,7 +621,7 @@ Describe the output format...
                             <Label className="text-white/50 text-xs">Input</Label>
                             <textarea
                               value={tc.input}
-                              onChange={e => updateTestCase(tc.id, 'input', e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateTestCase(tc.id, 'input', e.target.value)}
                               className="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-sm text-white font-mono text-xs resize-y"
                               rows={3}
                               placeholder="Enter input..."
@@ -637,7 +631,7 @@ Describe the output format...
                             <Label className="text-white/50 text-xs">Expected Output</Label>
                             <textarea
                               value={tc.output}
-                              onChange={e => updateTestCase(tc.id, 'output', e.target.value)}
+                              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateTestCase(tc.id, 'output', e.target.value)}
                               className="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-sm text-white font-mono text-xs resize-y"
                               rows={3}
                               placeholder="Enter expected output..."
@@ -648,7 +642,7 @@ Describe the output format...
                               <Label className="text-white/50 text-xs">Explanation (Optional)</Label>
                               <Input
                                 value={tc.explanation || ''}
-                                onChange={e => updateTestCase(tc.id, 'explanation', e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateTestCase(tc.id, 'explanation', e.target.value)}
                                 className="bg-white/5 border-white/10 mt-1 text-xs text-white placeholder:text-white/30"
                                 placeholder="Explain this example..."
                               />
@@ -672,12 +666,12 @@ Describe the output format...
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
+                  Updating...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Create Problem
+                  Update Problem
                 </>
               )}
             </Button>
