@@ -17,7 +17,7 @@ const menuItems = [
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/problems', label: 'Problems', icon: Code2 },
   { href: '/admin/tags', label: 'Tags', icon: Tag },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin/contests', label: 'Contests' , icon: Settings },
 ];
 
 export default function AdminSidebar() {
