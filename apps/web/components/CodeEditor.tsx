@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Monaco from '@monaco-editor/react';
 import { Play, Loader2, CheckCircle2, XCircle, Clock, AlertTriangle, Lock, ChevronUp, ChevronDown } from 'lucide-react';
+import { getBoilerplate } from '@/lib/boilerplates';
 
 const LANGUAGES = [
   { value: 'cpp', label: 'C++', monaco: 'cpp' },
@@ -19,9 +20,21 @@ const LANGUAGE_MAP: Record<string, string> = {
   javascript: 'JS',
 };
 
-export default function CodeEditor({ problemId }: { problemId: string }) {
+interface CodeEditorProps {
+  problemId: string;
+  contestId?: string;
+  isContest?: boolean;
+  isEnded?: boolean;
+}
+
+export default function CodeEditor({ 
+  problemId, 
+  contestId, 
+  isContest = false, 
+  isEnded = false 
+}: CodeEditorProps) {
   const { data: session } = useSession();
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(() => getBoilerplate('CPP'));
   const [language, setLanguage] = useState('cpp');
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -31,10 +44,10 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isLoggedIn = !!session;
-  const isDisabled = submitting || isPolling;
+  const canSubmit = !isContest || !isEnded;
+  const isDisabled = submitting || isPolling || !canSubmit;
   const showResultPanel = result && isLoggedIn;
 
-  // Adjust editor height when result panel is shown
   useEffect(() => {
     if (showResultPanel) {
       setEditorHeight('50%');
@@ -42,6 +55,11 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
       setEditorHeight('100%');
     }
   }, [showResultPanel]);
+
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+    setCode(getBoilerplate(LANGUAGE_MAP[newLanguage]));
+  };
 
   const handleSubmit = async () => {
     const userId = session?.user?.id;
@@ -57,15 +75,21 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
     setEditorHeight('50%');
 
     try {
+      const body: any = {
+        userId,
+        problemId,
+        code,
+        language: LANGUAGE_MAP[language],
+      };
+      
+      if (isContest && contestId) {
+        body.contestId = contestId;
+      }
+      
       const response = await fetch(`${process.env.NEXT_PUBLIC_JUDGE_API_URL}/api/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          problemId,
-          code,
-          language: LANGUAGE_MAP[language],
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -169,7 +193,7 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
         <div className="flex items-center gap-3">
           <select
             value={language}
-            onChange={(e) => setLanguage(e.target.value)}
+            onChange={(e) => handleLanguageChange(e.target.value)}
             disabled={!isLoggedIn || isDisabled}
             className={`px-3 py-1.5 rounded-md text-sm bg-white/5 border border-white/10 font-mono transition-colors ${
               isLoggedIn && !isDisabled
@@ -223,7 +247,7 @@ export default function CodeEditor({ problemId }: { problemId: string }) {
           {isDisabled ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              {isPolling ? 'Judging...' : 'Running...'}
+              {isPolling ? 'Judging...' : isEnded ? 'Contest Ended' : 'Running...'}
             </>
           ) : (
             <>
