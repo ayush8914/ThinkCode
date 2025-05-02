@@ -9,6 +9,16 @@
 * 🟢 You can import this file directly.
 */
 
+export const Division = {
+  DIV1: 'DIV1',
+  DIV2: 'DIV2',
+  DIV3: 'DIV3',
+  DIV4: 'DIV4'
+} as const
+
+export type Division = (typeof Division)[keyof typeof Division]
+
+
 export const Role = {
   USER: 'USER',
   ADMIN: 'ADMIN',

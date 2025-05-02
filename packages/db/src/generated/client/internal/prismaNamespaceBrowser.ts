@@ -57,7 +57,12 @@ export const ModelName = {
   Tag: 'Tag',
   ProblemTag: 'ProblemTag',
   Submission: 'Submission',
-  UserActivity: 'UserActivity'
+  UserActivity: 'UserActivity',
+  Contest: 'Contest',
+  ContestDivision: 'ContestDivision',
+  ContestProblem: 'ContestProblem',
+  ContestParticipant: 'ContestParticipant',
+  RatingChange: 'RatingChange'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -157,7 +162,8 @@ export const SubmissionScalarFieldEnum = {
   errorMessage: 'errorMessage',
   failedTestCaseIndex: 'failedTestCaseIndex',
   createdAt: 'createdAt',
-  judgedAt: 'judgedAt'
+  judgedAt: 'judgedAt',
+  contestId: 'contestId'
 } as const
 
 export type SubmissionScalarFieldEnum = (typeof SubmissionScalarFieldEnum)[keyof typeof SubmissionScalarFieldEnum]
@@ -178,12 +184,89 @@ export const UserActivityScalarFieldEnum = {
 export type UserActivityScalarFieldEnum = (typeof UserActivityScalarFieldEnum)[keyof typeof UserActivityScalarFieldEnum]
 
 
+export const ContestScalarFieldEnum = {
+  id: 'id',
+  title: 'title',
+  slug: 'slug',
+  description: 'description',
+  contestName: 'contestName',
+  contestType: 'contestType',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  registrationDeadline: 'registrationDeadline',
+  isPublic: 'isPublic',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ContestScalarFieldEnum = (typeof ContestScalarFieldEnum)[keyof typeof ContestScalarFieldEnum]
+
+
+export const ContestDivisionScalarFieldEnum = {
+  id: 'id',
+  contestId: 'contestId',
+  division: 'division'
+} as const
+
+export type ContestDivisionScalarFieldEnum = (typeof ContestDivisionScalarFieldEnum)[keyof typeof ContestDivisionScalarFieldEnum]
+
+
+export const ContestProblemScalarFieldEnum = {
+  id: 'id',
+  contestId: 'contestId',
+  problemId: 'problemId',
+  orderIndex: 'orderIndex',
+  visibleToDivisions: 'visibleToDivisions'
+} as const
+
+export type ContestProblemScalarFieldEnum = (typeof ContestProblemScalarFieldEnum)[keyof typeof ContestProblemScalarFieldEnum]
+
+
+export const ContestParticipantScalarFieldEnum = {
+  id: 'id',
+  contestId: 'contestId',
+  userId: 'userId',
+  division: 'division',
+  registeredAt: 'registeredAt',
+  score: 'score',
+  rank: 'rank',
+  solvedCount: 'solvedCount',
+  penalty: 'penalty',
+  problemStatuses: 'problemStatuses'
+} as const
+
+export type ContestParticipantScalarFieldEnum = (typeof ContestParticipantScalarFieldEnum)[keyof typeof ContestParticipantScalarFieldEnum]
+
+
+export const RatingChangeScalarFieldEnum = {
+  id: 'id',
+  contestId: 'contestId',
+  userId: 'userId',
+  division: 'division',
+  oldRating: 'oldRating',
+  newRating: 'newRating',
+  change: 'change',
+  rank: 'rank',
+  createdAt: 'createdAt'
+} as const
+
+export type RatingChangeScalarFieldEnum = (typeof RatingChangeScalarFieldEnum)[keyof typeof RatingChangeScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -200,4 +283,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

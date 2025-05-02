@@ -25,6 +25,8 @@ model User {
   
   submissions   Submission[]
   activities    UserActivity[]
+  contestParticipants ContestParticipant[]
+  ratingChanges       RatingChange[]
   
   @@map("users")
 }
@@ -54,6 +56,8 @@ model Problem {
   tags             ProblemTag[]
   testCases        TestCase[]
   submissions      Submission[]
+  contestProblems  ContestProblem[]
+
   
   @@map("problems")
 }
@@ -108,6 +112,10 @@ model Submission {
   
   createdAt   DateTime  @default(now())
   judgedAt    DateTime?
+
+  contestId   String?   // ADD THIS
+  contest     Contest?  @relation(fields: [contestId], references: [id], onDelete: SetNull)
+  
   
   @@index([userId, problemId])
   @@index([status])
@@ -131,6 +139,104 @@ model UserActivity {
   
   @@unique([userId, date])
   @@map("user_activities")
+}
+
+
+model Contest {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  description String?       @db.Text
+  
+  contestName ContestName   // STARTERS, WEEKLY, LONG_WEEK
+  contestType ContestType   // RATED, UNRATED
+  
+  startTime   DateTime
+  endTime     DateTime
+  registrationDeadline DateTime?
+  
+  isPublic    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  
+  divisions   ContestDivision[]
+  problems    ContestProblem[]
+  participants ContestParticipant[]
+  ratingChanges RatingChange[]
+  submissions  Submission[]
+  
+  @@map("contests")
+}
+
+model ContestDivision {
+  id          String    @id @default(cuid())
+  contestId   String
+  contest     Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  division    Division
+  
+  @@unique([contestId, division])
+  @@map("contest_divisions")
+}
+
+model ContestProblem {
+  id          String    @id @default(cuid())
+  contestId   String
+  contest     Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problemId   String
+  problem     Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  
+  orderIndex  Int       @default(0) 
+
+  visibleToDivisions Division[]
+  
+  @@map("contest_problems")
+}
+
+model ContestParticipant {
+  id          String    @id @default(cuid())
+  contestId   String
+  contest     Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  division    Division  
+  
+  registeredAt DateTime @default(now())
+  
+  score       Int       @default(0)
+  rank        Int?
+  solvedCount Int       @default(0)
+  penalty     Int       @default(0)  
+  
+  problemStatuses Json?  // [{ problemId, attempts, solved, solveTime, score }]
+  
+  @@unique([contestId, userId])
+  @@map("contest_participants")
+}
+
+model RatingChange {
+  id          String    @id @default(cuid())
+  contestId   String
+  contest     Contest   @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  division    Division
+  
+  oldRating   Int
+  newRating   Int
+  change      Int
+  rank        Int
+  
+  createdAt   DateTime  @default(now())
+  
+  @@unique([contestId, userId])
+  @@map("rating_changes")
+}
+
+enum Division {
+  DIV1  // Rating >= 2000
+  DIV2  // Rating 1600-1999
+  DIV3  // Rating 1400-1599
+  DIV4  // Rating <= 1399
 }
 
 enum Role {

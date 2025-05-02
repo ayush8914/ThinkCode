@@ -76,3 +76,28 @@ export type Submission = Prisma.SubmissionModel
  * 
  */
 export type UserActivity = Prisma.UserActivityModel
+/**
+ * Model Contest
+ * 
+ */
+export type Contest = Prisma.ContestModel
+/**
+ * Model ContestDivision
+ * 
+ */
+export type ContestDivision = Prisma.ContestDivisionModel
+/**
+ * Model ContestProblem
+ * 
+ */
+export type ContestProblem = Prisma.ContestProblemModel
+/**
+ * Model ContestParticipant
+ * 
+ */
+export type ContestParticipant = Prisma.ContestParticipantModel
+/**
+ * Model RatingChange
+ * 
+ */
+export type RatingChange = Prisma.RatingChangeModel
