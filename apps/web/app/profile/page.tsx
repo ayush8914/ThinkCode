@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { prisma } from '@repo/db';
 import { ActivityHeatMap } from '@/components/ActivityHeatMap';
+import RatingGraph from '@/components/RatingGraph';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,20 +12,16 @@ import Link from 'next/link';
 import {
   Trophy,
   Code2,
-  Calendar,
-  Clock,
   CheckCircle2,
-  XCircle,
-  AlertTriangle,
   TrendingUp,
   Award,
-  GitBranch,
   Star,
   Settings,
-  Edit,
   Mail,
-  ExternalLink,
+  TrendingDown,
+  Activity,
 } from 'lucide-react';
+import { getDivisionFromRating, getDivisionColor } from '@/lib/division';
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -71,6 +68,12 @@ export default async function ProfilePage() {
   }, {} as Record<string, number>);
   
   const mostUsedLanguage = Object.entries(languageStats).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
+  // Rating information
+  const rating = user.contestRating || 1200;
+  const maxRating = user.maxContestRating || 1200;
+  const division = getDivisionFromRating(rating);
+  const divisionColor = getDivisionColor(division);
   
   return (
     <main className="relative min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden font-mono">
@@ -176,10 +179,12 @@ export default async function ProfilePage() {
               <span className="text-white/50 text-sm">Contest Rating</span>
               <Trophy className="h-4 w-4 text-amber-400" />
             </div>
-            <p className="text-3xl font-bold">
-              {user.contestRating || '—'}
-            </p>
-            <p className="text-xs text-amber-400 mt-2">Max: {user.maxContestRating || '—'}</p>
+            <p className="text-3xl font-bold">{rating}</p>
+            <div className="flex items-center gap-1 mt-2">
+              <span className={`text-xs ${divisionColor}`}>{division}</span>
+              <span className="text-white/30 text-xs">•</span>
+              <span className="text-white/40 text-xs">Max: {maxRating}</span>
+            </div>
           </div>
           
           <div className="rounded-sm border border-white/10 bg-white/[0.02] p-4">
@@ -204,19 +209,25 @@ export default async function ProfilePage() {
           <TabsList className="bg-transparent border-b border-white/10 w-full justify-start rounded-none h-auto p-0 mb-6">
             <TabsTrigger 
               value="submissions"
-              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-violet-400 rounded-none px-6 py-3 text-white/60 data-[state=active]:text-white"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-violet-400 rounded-none px-6 py-3 text-white/60 data-[state=active]:text-white  hover:bg-mist-200 hover:text-black"
             >
               Recent Submissions
             </TabsTrigger>
             <TabsTrigger 
               value="statistics"
-              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-violet-400 rounded-none px-6 py-3 text-white/60 data-[state=active]:text-white"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-violet-400 rounded-none px-6 py-3 text-white/60 data-[state=active]:text-white  hover:bg-mist-200 hover:text-black"
             >
               Statistics
             </TabsTrigger>
             <TabsTrigger 
+              value="rating"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-violet-400 rounded-none px-6 py-3 text-white/60 data-[state=active]:text-white hover:bg-mist-200 hover:text-black"
+            >
+              Rating
+            </TabsTrigger>
+            <TabsTrigger 
               value="achievements"
-              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-violet-400 rounded-none px-6 py-3 text-white/60 data-[state=active]:text-white"
+              className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-violet-400 rounded-none px-6 py-3 text-white/60 data-[state=active]:text-white  hover:bg-mist-200 hover:text-black"
             >
               Achievements
             </TabsTrigger>
@@ -305,6 +316,84 @@ export default async function ProfilePage() {
             </div>
           </TabsContent>
           
+          <TabsContent value="rating">
+            <div className="space-y-6">
+              {/* Rating Summary Card */}
+              <div className="rounded-sm border border-white/10 bg-white/[0.02] p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-amber-400" />
+                  Contest Rating Summary
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center p-4 rounded-sm bg-white/[0.02] border border-white/10">
+                    <span className="text-white/50 text-sm block mb-2">Current Rating</span>
+                    <p className="text-5xl font-bold text-white">{rating}</p>
+                    <p className={`text-sm mt-2 ${divisionColor}`}>{division}</p>
+                  </div>
+                  <div className="text-center p-4 rounded-sm bg-white/[0.02] border border-white/10">
+                    <span className="text-white/50 text-sm block mb-2">Max Rating</span>
+                    <p className="text-5xl font-bold text-emerald-400">{maxRating}</p>
+                    <p className="text-sm text-white/40 mt-2">All-time high</p>
+                  </div>
+                  <div className="text-center p-4 rounded-sm bg-white/[0.02] border border-white/10">
+                    <span className="text-white/50 text-sm block mb-2">Global Rank</span>
+                    <p className="text-5xl font-bold text-violet-400">
+                      {user.globalRanking?.toLocaleString() || '—'}
+                    </p>
+                    <p className="text-sm text-white/40 mt-2">Worldwide</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Rating Graph */}
+              <div className="rounded-sm border border-white/10 bg-white/[0.02] p-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-violet-400" />
+                  Rating History
+                </h3>
+                <RatingGraph userId={session.user.id} />
+              </div>
+              
+              {/* Division Info */}
+              <div className="rounded-sm border border-white/10 bg-white/[0.02] p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Division Information</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                  <div className="p-3 rounded-sm bg-rose-500/5 border border-rose-500/20">
+                    <p className="text-rose-400 font-bold text-lg">DIV 1</p>
+                    <p className="text-white/50 text-xs mt-1">≥ 2000</p>
+                    <p className={`text-xs mt-2 ${rating >= 2000 ? 'text-emerald-400' : 'text-white/30'}`}>
+                      {rating >= 2000 ? '✓ Current' : ''}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-sm bg-orange-500/5 border border-orange-500/20">
+                    <p className="text-orange-400 font-bold text-lg">DIV 2</p>
+                    <p className="text-white/50 text-xs mt-1">1600 - 1999</p>
+                    <p className={`text-xs mt-2 ${rating >= 1600 && rating < 2000 ? 'text-emerald-400' : 'text-white/30'}`}>
+                      {rating >= 1600 && rating < 2000 ? '✓ Current' : ''}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-sm bg-blue-500/5 border border-blue-500/20">
+                    <p className="text-blue-400 font-bold text-lg">DIV 3</p>
+                    <p className="text-white/50 text-xs mt-1">1400 - 1599</p>
+                    <p className={`text-xs mt-2 ${rating >= 1400 && rating < 1600 ? 'text-emerald-400' : 'text-white/30'}`}>
+                      {rating >= 1400 && rating < 1600 ? '✓ Current' : ''}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-sm bg-emerald-500/5 border border-emerald-500/20">
+                    <p className="text-emerald-400 font-bold text-lg">DIV 4</p>
+                    <p className="text-white/50 text-xs mt-1">≤ 1399</p>
+                    <p className={`text-xs mt-2 ${rating < 1400 ? 'text-emerald-400' : 'text-white/30'}`}>
+                      {rating < 1400 ? '✓ Current' : ''}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-white/40 text-xs text-center mt-4">
+                  Compete in rated contests to increase your rating and climb divisions!
+                </p>
+              </div>
+            </div>
+          </TabsContent>
+          
           <TabsContent value="achievements">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {uniqueProblemsSolved >= 1 && (
@@ -326,6 +415,20 @@ export default async function ProfilePage() {
                   <Trophy className="h-8 w-8 text-emerald-400 mb-3" />
                   <h4 className="font-semibold mb-1">Code Master</h4>
                   <p className="text-white/40 text-sm">Solved 50+ problems</p>
+                </div>
+              )}
+              {rating >= 1600 && (
+                <div className="rounded-sm border border-white/10 bg-white/[0.02] p-4">
+                  <TrendingUp className="h-8 w-8 text-orange-400 mb-3" />
+                  <h4 className="font-semibold mb-1">Division Climber</h4>
+                  <p className="text-white/40 text-sm">Reached Division 2</p>
+                </div>
+              )}
+              {rating >= 2000 && (
+                <div className="rounded-sm border border-white/10 bg-white/[0.02] p-4">
+                  <Trophy className="h-8 w-8 text-rose-400 mb-3" />
+                  <h4 className="font-semibold mb-1">Elite</h4>
+                  <p className="text-white/40 text-sm">Reached Division 1</p>
                 </div>
               )}
             </div>
