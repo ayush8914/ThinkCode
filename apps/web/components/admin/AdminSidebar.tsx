@@ -10,6 +10,7 @@ import {
   Settings,
   Shield,
   ChevronRight,
+  Trophy,
 } from 'lucide-react';
 
 const menuItems = [
@@ -17,7 +18,7 @@ const menuItems = [
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/problems', label: 'Problems', icon: Code2 },
   { href: '/admin/tags', label: 'Tags', icon: Tag },
-  { href: '/admin/contests', label: 'Contests' , icon: Settings },
+  { href: '/admin/contests', label: 'Contests', icon: Trophy },
 ];
 
 export default function AdminSidebar() {
