@@ -66,6 +66,7 @@ router.post('/submit', async (req: Request, res: Response) => {
         code,
         language: language as Language,
         status: 'PENDING',
+        contestId: req.body.contestId || null,
       },
     });
     
@@ -77,6 +78,7 @@ router.post('/submit', async (req: Request, res: Response) => {
       code,
       language: language as Language,
       timestamp: Date.now(),
+      contestId : req.body.contestId || null,
     };
     
     // Push to queue
