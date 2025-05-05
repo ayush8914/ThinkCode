@@ -325,4 +325,90 @@ async executeBatch(
     await this.cleanup([codeFile, inputFile]);
   }
 }
+
+async executeWithDriver(
+  code: string,
+  language: Language,
+  testCases: Array<{ input: string; output: string }>,
+  limits: { timeLimitMs: number; memoryLimitKb: number }
+): Promise<{
+  results: ExecutionResult[];
+  totalTimeMs: number;
+  maxMemoryKb: number;
+}> {
+  const runId = randomUUID();
+  const extension = this.getExtension(language);
+  const codeFile = path.join(this.workDir, `${runId}.${extension}`);
+  const inputFile = path.join(this.workDir, `${runId}.in`);
+  
+  try {
+    await fs.writeFile(codeFile, code, { mode: 0o644 });
+    
+    // Simple format: first line = t, then each test case input
+    const combinedInput = `${testCases.length}\n${testCases.map(tc => tc.input).join('\n')}`;
+    await fs.writeFile(inputFile, combinedInput, { mode: 0o644 });
+    
+    console.log(`Executing DRIVER MODE: ${language} with ${testCases.length} test cases`);
+    const startTime = Date.now();
+    
+    const { stdout, stderr } = await execFileAsync(
+      this.sandboxPath,
+      [
+        language,
+        codeFile,
+        inputFile,
+        limits.timeLimitMs.toString(),
+        limits.memoryLimitKb.toString(),
+        '--driver'
+      ],
+      {
+        timeout: limits.timeLimitMs + 5000,
+        maxBuffer: 50 * 1024 * 1024,
+        env: { ...process.env, PATH: '/usr/local/bin:/usr/bin:/bin' },
+      }
+    );
+    
+    const totalTimeMs = Date.now() - startTime;
+    
+    // Simple: one output per line
+    const outputs = stdout.trim().split('\n').filter(o => o !== '');
+    const results: ExecutionResult[] = [];
+    
+    for (let i = 0; i < testCases.length; i++) {
+      const gotOutput = outputs[i]?.trim() || '';
+      const expectedOutput = testCases?.[i]?.output.trim();
+      
+      if (stderr && stderr.includes('COMPILATION_ERROR')) {
+        results.push({ status: 'COMPILATION_ERROR', errorMessage: stderr });
+      } else if (gotOutput === expectedOutput) {
+        results.push({
+          status: 'ACCEPTED',
+          output: gotOutput,
+          executionTimeMs: Math.floor(totalTimeMs / testCases.length),
+          memoryUsedKb: 0,
+        });
+      } else {
+        console.log(`\n❌ FAILED Test Case ${i + 1}:`);
+        console.log(`   Input: ${testCases?.[i]?.input}`);
+        console.log(`   Expected: ${expectedOutput}`);
+        console.log(`   Got: ${gotOutput}`);
+        
+        results.push({
+          status: 'WRONG_ANSWER',
+          output: gotOutput,
+          executionTimeMs: Math.floor(totalTimeMs / testCases.length),
+          memoryUsedKb: 0,
+        });
+      }
+    }
+    
+    return { results, totalTimeMs, maxMemoryKb: 0 };
+    
+  } finally {
+    await this.cleanup([codeFile, inputFile]);
+  }
+}
+
+
+
 }

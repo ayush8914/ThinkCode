@@ -7,6 +7,7 @@ export interface JudgeTask {
   code: string;
   language: Language;
   timestamp: number;
+  contestId?: string | null;
 }
 
 export interface TestCase {

@@ -4,6 +4,9 @@ import { CodeExecutor } from './executor.js';
 import type { JudgeTask, TestCase } from './types.js';
 import * as os from 'os';
 import { trackSubmissionActivity } from './activity.js';
+import { processContestResults } from './contest-rating.js';
+
+
 
 class JudgeWorker {
   private redis: Redis;
@@ -41,7 +44,7 @@ class JudgeWorker {
     process.on('SIGTERM', () => this.shutdown());
     process.on('SIGINT', () => this.shutdown());
   }
-  
+
   async processSubmission(task: JudgeTask): Promise<void> {
     const startTime = Date.now();
     this.concurrentExecutions++;
@@ -97,6 +100,11 @@ class JudgeWorker {
         },
       });
       
+
+      if (result.status === 'ACCEPTED' && task.contestId) {
+        await this.updateContestScore(task);
+      }
+
        await trackSubmissionActivity(task.userId, result.status);
 
 
@@ -199,6 +207,61 @@ class JudgeWorker {
   //   };
   // }
 
+// private async runTestCases(
+//   task: JudgeTask,
+//   testCases: TestCase[],
+//   limits: { timeLimitMs: number; memoryLimitKb: number }
+// ): Promise<{
+//   status: Status;
+//   executionTimeMs?: number;
+//   memoryUsedKb?: number;
+//   errorMessage?: string;
+//   failedTestCaseIndex?: number;
+// }> {
+//   console.log(`🧪 [${this.workerId}] Running ${testCases.length} test cases in BATCH mode`);
+  
+//   const batchTestCases = testCases.map(tc => ({
+//     input: tc.input,
+//     output: tc.output,
+//   }));
+  
+//   const batchResult = await this.executor.executeBatch(
+//     task.code,
+//     task.language,
+//     batchTestCases,
+//     limits
+//   );
+  
+//   for (let i = 0; i < batchResult.results.length; i++) {
+//     const result : any = batchResult.results[i];
+    
+//     if (result.status !== 'ACCEPTED') {
+//       console.log(`\n❌ [${this.workerId}] Failed at test case ${i + 1}/${testCases.length}: ${result.status}`);
+//       console.log(`   Problem: ${task.problemId}`);
+//       console.log(`   Input: ${testCases?.[i]?.input}`);
+//       console.log(`   Expected: ${testCases?.[i]?.output.trim()}`);
+//       console.log(`   Got: ${result.output || '(empty)'}`);
+      
+//       return {
+//         status: result.status,
+//         executionTimeMs: batchResult.totalTimeMs,
+//         memoryUsedKb: batchResult.maxMemoryKb,
+//         errorMessage: result.errorMessage,
+//         failedTestCaseIndex: i,
+//       };
+//     }
+//   }
+  
+//   console.log(`  ✅ [${this.workerId}] All ${testCases.length} test cases passed`);
+  
+//   return {
+//     status: 'ACCEPTED',
+//     executionTimeMs: batchResult.totalTimeMs,
+//     memoryUsedKb: batchResult.maxMemoryKb,
+//   };
+// }
+
+
 private async runTestCases(
   task: JudgeTask,
   testCases: TestCase[],
@@ -210,14 +273,14 @@ private async runTestCases(
   errorMessage?: string;
   failedTestCaseIndex?: number;
 }> {
-  console.log(`🧪 [${this.workerId}] Running ${testCases.length} test cases in BATCH mode`);
+  console.log(`🧪 [${this.workerId}] Running ${testCases.length} test cases in DRIVER mode`);
   
   const batchTestCases = testCases.map(tc => ({
     input: tc.input,
     output: tc.output,
   }));
   
-  const batchResult = await this.executor.executeBatch(
+  const batchResult = await this.executor.executeWithDriver(
     task.code,
     task.language,
     batchTestCases,
@@ -226,16 +289,17 @@ private async runTestCases(
   
   for (let i = 0; i < batchResult.results.length; i++) {
     const result : any = batchResult.results[i];
+    const expectedOutput = testCases?.[i]?.output.trim();
+    const gotOutput = result.output?.trim() || '';
     
-    if (result.status !== 'ACCEPTED') {
-      console.log(`\n❌ [${this.workerId}] Failed at test case ${i + 1}/${testCases.length}: ${result.status}`);
-      console.log(`   Problem: ${task.problemId}`);
-      console.log(`   Input: ${testCases?.[i]?.input}`);
-      console.log(`   Expected: ${testCases?.[i]?.output.trim()}`);
-      console.log(`   Got: ${result.output || '(empty)'}`);
+    if (result.status !== 'ACCEPTED' || gotOutput !== expectedOutput) {
+      console.log(`\n❌ [${this.workerId}] Failed at test case ${i + 1}/${testCases.length}`);
+      console.log(`   Input: ${testCases[i]?.input}`);
+      console.log(`   Expected: ${expectedOutput}`);
+      console.log(`   Got: ${gotOutput || '(empty)'}`);
       
       return {
-        status: result.status,
+        status: result.status !== 'ACCEPTED' ? result.status : 'WRONG_ANSWER',
         executionTimeMs: batchResult.totalTimeMs,
         memoryUsedKb: batchResult.maxMemoryKb,
         errorMessage: result.errorMessage,
@@ -264,11 +328,33 @@ private async runTestCases(
 ║  Total Memory: ${Math.round(os.totalmem() / 1024 / 1024 / 1024)}GB${' '.repeat(34)}║
 ╚══════════════════════════════════════════════════════════╝
     `);
+
+
+setInterval(async () => {
+  try {
+    const now = new Date();
+    console.log(`⏰ Checking for contests ended around ${now.toISOString()}...`);
+    const endedContests = await prisma.contest.findMany({
+      where: {
+        endTime: { lt: now},
+        isPublic: true,
+      },
+      select: { id: true, title: true },
+    });
+    
+    for (const contest of endedContests) {
+      console.log(`📊 Auto-processing ended contest: ${contest.title}`);
+      await processContestResults(contest.id);
+    }
+  } catch (error) {
+    console.error('Failed to check ended contests:', error);
+  }
+}, 12*60*60*1000); 
     
     while (this.isRunning) {
       try {
         if (this.concurrentExecutions < this.maxConcurrent) {
-          const result = await this.redis.brpop('judge:queue', 1); // 1 second timeout
+          const result = await this.redis.brpop('judge:queue', 1);
           
           if (result) {
             const [, taskJson] = result;
@@ -305,6 +391,54 @@ private async runTestCases(
     console.log(`👋 [${this.workerId}] Worker shut down`);
     process.exit(0);
   }
+
+  async updateContestScore(task: JudgeTask) {
+  try {
+    const existingAccepted = await prisma.submission.findFirst({
+      where: {
+        contestId: task.contestId,
+        userId: task.userId,
+        problemId: task.problemId,
+        status: 'ACCEPTED',
+        id: { not: task.submissionId },
+      },
+    });
+    
+    if (existingAccepted) {
+      console.log(`User ${task.userId} already solved problem ${task.problemId} in contest ${task.contestId}`);
+      return;
+    }
+    
+    const problem = await prisma.problem.findUnique({
+      where: { id: task.problemId },
+      select: { rating: true },
+    });
+    
+    const points = this.calculatePoints(problem?.rating || 10);
+    
+    await prisma.contestParticipant.update({
+      where: {
+        contestId_userId: {
+          contestId: task.contestId || '',
+          userId: task.userId,
+        },
+      },
+      data: {
+        score: { increment: points },
+        solvedCount: { increment: 1 },
+      },
+    });
+    
+    console.log(`✅ Awarded ${points} points to user ${task.userId} in contest ${task.contestId}`);
+    
+  } catch (error) {
+    console.error('Failed to update contest score:', error);
+  }
+}
+
+ calculatePoints(rating: number): number {
+ return rating;
+}
 }
 
 const worker = new JudgeWorker();
