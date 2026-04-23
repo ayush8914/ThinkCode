@@ -1,0 +1,20 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY turbo.json ./
+COPY apps ./apps
+COPY packages ./packages
+
+RUN npm install
+
+RUN npm install -g turbo
+
+RUN cd packages/db && npx prisma generate && npm run build
+
+RUN cd apps/judge-api && npm i @repo/db && npm run build
+
+EXPOSE 3008
+
+CMD ["turbo", "run", "start", "--filter=judge-api"]

@@ -86,7 +86,7 @@ export default function CodeEditor({
         body.contestId = contestId;
       }
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_JUDGE_API_URL}/api/submit`, {
+      const response = await fetch(`http://localhost:3008/api/submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -123,7 +123,7 @@ export default function CodeEditor({
       await new Promise(r => setTimeout(r, 1000));
       
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_JUDGE_API_URL}/api/submission/${submissionId}`);
+        const res = await fetch(`http://localhost:3008/api/submission/${submissionId}`);
         const data = await res.json();
 
         if (data.success) {

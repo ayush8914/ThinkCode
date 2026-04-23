@@ -1,0 +1,17 @@
+# k8s/web-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: thinkcode-web-service
+  labels:
+    app: thinkcode-web
+spec:
+  type: NodePort
+  ports:
+    - port: 3005
+      targetPort: 3005
+      nodePort: 30005
+      protocol: TCP
+      name: http
+  selector:
+    app: thinkcode-web

@@ -1,0 +1,20 @@
+FROM node:22-alpine
+
+RUN apk add --no-cache bash g++ gcc python3 nodejs util-linux
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY turbo.json ./
+COPY apps ./apps
+COPY packages ./packages
+
+RUN npm install
+
+RUN npm install -g turbo
+
+RUN cd packages/db && npx prisma generate && npm run build
+
+RUN cd apps/judge-worker && npm i @repo/db && npm run build
+
+CMD ["turbo", "run", "start", "--filter=judge-worker"]

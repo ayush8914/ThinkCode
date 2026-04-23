@@ -2,36 +2,32 @@
 
 set -e
 
-echo "📦 Deploying ThinkCode applications..."
+#creating cluster
+echo "Creating Kubernetes cluster with kind..."
+kind create cluster --name thinkcode --config k8s/kind/kind-config.yml
+echo "Cluster created successfully."
 
-# Deploy applications
-kubectl apply -f k8s/judge-api/
-kubectl apply -f k8s/judge-worker/
-kubectl apply -f k8s/web/
 
-# Wait for deployments
-echo "Waiting for deployments to be ready..."
-kubectl wait --namespace thinkcode \
-  --for=condition=available \
-  --selector=app=judge-api \
-  --timeout=120s deployment
+#deploying redis
+echo "Deploying Redis..."
+kubectl apply -f k8s/redis/redis-configmap.yml
+kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.26/deploy/local-path-storage.yaml
+kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+kubectl patch storageclass standard -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+kubectl apply -f k8s/redis/redis-pvc.yml
+kubectl apply -f k8s/redis/redis-deployment.yml
+kubectl apply -f k8s/redis/redis-service.yml
+kubectl get pvc redis-pvc
+echo "Redis deployed successfully."
 
-kubectl wait --namespace thinkcode \
-  --for=condition=available \
-  --selector=app=judge-worker \
-  --timeout=120s deployment
 
-kubectl wait --namespace thinkcode \
-  --for=condition=available \
-  --selector=app=web \
-  --timeout=120s deployment
+#deploying postgres
+echo "Deploying PostgreSQL..."
+kubectl apply -f k8s/postgres/postgres-all.yml
+kubectl get pvc postgres-pvc
+echo "PostgreSQL deployed successfully."
 
-# Get service URLs
-echo -e "\n✅ Deployment complete!"
-echo -e "\n🌐 Access URLs:"
-echo "Web Application: http://localhost:30000"
-echo "Judge API: http://localhost:30001 (via port-forward)"
-echo -e "\n📊 Monitoring Commands:"
-echo "kubectl get pods -n thinkcode"
-echo "kubectl logs -f -l app=judge-worker -n thinkcode"
-echo "kubectl port-forward -n thinkcode svc/judge-api 3001:3001"
+
+#deploying judge-api
+echo "Deploying Judge API..."
+kubectl apply -f k8s/judge-api/deployment.yml

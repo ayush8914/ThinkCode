@@ -1,63 +1,97 @@
+# k8s/web-app.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thinkcode-web-config
+  labels:
+    app: thinkcode-web
+data:
+  NEXT_PUBLIC_JUDGE_API_URL: "http://localhost:3008"
+  NODE_ENV: "production"
+  NEXT_TELEMETRY_DISABLED: "1"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: thinkcode-web-secrets
+  labels:
+    app: thinkcode-web
+type: Opaque
+stringData:
+  # Databasegi 
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web
-  namespace: thinkcode
+  name: thinkcode-web
   labels:
-    app: web
+    app: thinkcode-web
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: web
+      app: thinkcode-web
   template:
     metadata:
       labels:
-        app: web
+        app: thinkcode-web
     spec:
       containers:
       - name: web
-        image: thinkcode/web:latest
-        imagePullPolicy: IfNotPresent
+        image: ayush8914/thinkcode:latest
+        imagePullPolicy: Always
         ports:
-        - containerPort: 3000
+        - containerPort: 3005
           name: http
         envFrom:
         - configMapRef:
-            name: thinkcode-config
+            name: thinkcode-web-config
         - secretRef:
-            name: thinkcode-secrets
+            name: thinkcode-web-secrets
+        env:
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
         resources:
           requests:
-            memory: "512Mi"
+            memory: "256Mi"
             cpu: "250m"
           limits:
-            memory: "1Gi"
+            memory: "2Gi"
             cpu: "1000m"
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 5
+
 ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: thinkcode-web-service
+#   labels:
+#     app: thinkcode-web
+# spec:
+#   type: ClusterIP
+#   ports:
+#     - port: 3005
+#       targetPort: 3005
+#       protocol: TCP
+#       name: http
+#   selector:
+#     app: thinkcode-web
+
+
 apiVersion: v1
 kind: Service
 metadata:
-  name: web
+  name: thinkcode-web-service
+  labels:
+    app: thinkcode-web
 spec:
   type: NodePort
-  selector:
-    app: web
   ports:
-  - port: 3000
-    targetPort: 3000
-    nodePort: 30000
-    protocol: TCP
-    name: http
+    - port: 3005
+      targetPort: 3005
+      nodePort: 30005
+      protocol: TCP
+      name: http
+  selector:
+    app: thinkcode-web

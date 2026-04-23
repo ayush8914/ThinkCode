@@ -1,0 +1,25 @@
+# k8s/prisma-push-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: prisma-push
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: push
+        image: ayush8914/thinkcode:latest
+        workingDir: /app/packages/db
+        command: ["sh", "-c"]
+        args:
+          - |
+            echo "🚀 Pushing schema directly to database..."
+            npx prisma db push --accept-data-loss
+            
+            echo "✅ Schema pushed successfully!"
+        env:
+        - name: DATABASE_URL
+          value: "postgresql://thinkcode:thinkcode123@postgres-service:5432/thinkcode?schema=public"

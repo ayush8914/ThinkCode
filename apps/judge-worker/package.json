@@ -1,5 +1,5 @@
 {
-  "name": "@thinkcode/judge-worker",
+  "name": "judge-worker",
   "version": "0.0.1",
   "private": true,
   "type": "module",

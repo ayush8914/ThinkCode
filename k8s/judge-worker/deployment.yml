@@ -1,3 +1,17 @@
+# k8s/judge-worker.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: judge-worker-config
+  labels:
+    app: judge-worker
+data:
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  DATABASE_URL: "postgresql://thinkcode:thinkcode123@postgres-service:5432/thinkcode?schema=public"
+  MAX_CONCURRENT_EXECUTIONS: "3"
+  NODE_ENV: "production"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,23 +30,47 @@ spec:
     spec:
       containers:
       - name: judge-worker
-        image: thinkcode/judge-worker:latest
-        imagePullPolicy: IfNotPresent
+        image: ayush8914/judge-worker:latest
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
-            name: thinkcode-config
-        - secretRef:
-            name: thinkcode-secrets
+            name: judge-worker-config
+        env:
+        - name: JUDGE_WORKER_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        securityContext:
+          runAsUser: 0   
         resources:
           requests:
             memory: "512Mi"
-            cpu: "250m"
+            cpu: "500m"
           limits:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "2000m"
         volumeMounts:
-        - name: tmp
-          mountPath: /tmp
+        - name: judge-temp
+          mountPath: /tmp/judge
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "pgrep -f 'node.*judge-worker' || exit 1"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "pgrep -f 'node.*judge-worker' || exit 1"
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
       volumes:
-      - name: tmp
-        emptyDir: {}
+      - name: judge-temp
+        emptyDir:
+          sizeLimit: "1Gi"

@@ -6,7 +6,7 @@ const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.en
 dotenv.config({ path: envFile });
 
 const ConfigSchema = z.object({
-  PORT: z.string().default('3001'),
+  PORT: z.string().default('3008'),
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.string().default('6379'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),

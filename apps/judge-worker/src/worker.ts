@@ -19,7 +19,7 @@ class JudgeWorker {
   constructor() {
     this.workerId = `${os.hostname()}-${process.pid}`;
     this.redis = new Redis({
-      host: process.env.REDIS_HOST || 'redis.thinkcode.svc.cluster.local',
+      host: 'redis.default.svc.cluster.local',
       port: parseInt(process.env.REDIS_PORT || '6379'),
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
@@ -63,7 +63,6 @@ class JudgeWorker {
         where: { id: task.problemId },
         include: {
           testCases: {
-            // where: { isSample: false }, // Run only hidden test cases
             orderBy: { orderIndex: 'asc' },
           },
         },
